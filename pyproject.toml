@@ -46,14 +46,14 @@ test = [
 ]
 
 [project.entry-points."ibridges.shell"]
-dvnalias = "ibridgescontrib.dvn_alias:ALIAS_COMMANDS"
-dvninit = "ibridgescontrib.dvn_init:ALIAS_COMMANDS"
+dvnalias = "ibridgescontrib.ibridgesdvn:ALIAS_COMMANDS"
+dvninit = "ibridgescontrib.ibridgesdvn:INIT_COMMANDS"
 
 [tool.setuptools]
 packages = ["ibridgescontrib"]
 
 [tool.setuptools_scm]
-write_to = "ibridgescontrib/info/_version.py"
+write_to = "ibridgescontrib/ibridgesdvn/_version.py"
 
 [[tool.mypy.overrides]]
 module = [

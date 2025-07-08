@@ -1,12 +1,15 @@
 import sys
+import argparse
+from getpass import getpass
+
 from ibridges.cli.base import BaseCliCommand
-from dvn_config import DVNConf
+from ibridgescontrib.ibridgesdvn.dvn_config import DVNConf
 
 
 class CliDvnInit(BaseCliCommand):
     """Subcommand to initialize ibridges."""
 
-    names = ["init"]
+    names = ["dvninit"]
     description = "Provide token and store for future use"
     examples = ["", "some_url", "some_alias"]
 
@@ -31,15 +34,16 @@ class CliDvnInit(BaseCliCommand):
         """Initialize ibridges by logging in."""
         parser = cls.get_parser(argparse.ArgumentParser)
         dvn_conf = DVNConf(parser)
-        dvn_conf.set_env(url_or_alias)
+        dvn_conf.set_dvn(args.url_or_alias)
         dvn, entry = DVNConf(parser).get_entry()
         
         
         if sys.stdin.isatty() or "ipykernel" in sys.modules:
-            token = getpass("Your Dataverse token for {url_or_alias} : ")
+            token = getpass(f"Your Dataverse token for {args.url_or_alias} : ")
         else:
-            print("Your Dataverse token for {url_or_alias} : ")
+            print(f"Your Dataverse token for {args.url_or_alias} : ")
             token = sys.stdin.readline().rstrip()
         
         entry["token"] = token
+        print(dvn, entry)
         dvn_conf.save()

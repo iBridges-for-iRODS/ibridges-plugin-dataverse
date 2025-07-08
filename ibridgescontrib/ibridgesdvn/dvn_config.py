@@ -2,6 +2,7 @@
 
 from pathlib import Path
 import json
+import argparse
 import warnings
 from urllib.parse import urlparse
 from typing import Union
@@ -22,7 +23,6 @@ class DVNConf:
         try:
             with open(self.config_path, "r", encoding="utf-8") as handle:
                 dvn_conf = json.load(handle)
-                print(dvn_conf)
                 self.dvns = dvn_conf["dvns"]
                 self.cur_dvn = dvn_conf.get("cur_dvn", DEMO_DVN)
         except Exception as exc: # pylint: disable=W0718

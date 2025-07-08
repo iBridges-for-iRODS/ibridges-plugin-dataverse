@@ -1,7 +1,9 @@
 """Main plugin file to show info."""
+import argparse
+
 from ibridges.cli.base import BaseCliCommand
 
-from dvn_config import DVNConf
+from ibridgescontrib.ibridgesdvn.dvn_config import DVNConf
 
 class CliDvnAlias(BaseCliCommand):
     """Subcommand to get information from the server."""
@@ -42,13 +44,13 @@ class CliDvnAlias(BaseCliCommand):
     def run_command(cls, args):
         """Create and manage aliases in the CLI."""
         parser = cls.get_parser(argparse.ArgumentParser)
-        dvn_conf = DVNConf
+        dvn_conf = DVNConf(parser)
 
         # Show available and selected aliases.
         if args.alias is None:
             for url, entry in dvn_conf.dvns.items():
                 prefix = " "
-                if ibridges_conf.cur_env in (entry.get("alias", None), url):
+                if dvn_conf.cur_dvn in (entry.get("alias", None), url):
                     prefix = "*"
                 cur_alias = entry.get("alias", "[no alias]")
                 print(f"{prefix} {cur_alias} -> {url}")
