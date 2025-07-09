@@ -71,7 +71,6 @@ class DvnOperations:
                 break
 
     def _remove_path_from_dataset(self, dataset_id, path_to_remove, items):
-        print(items)
         for item in items:
             if item["dataset"] == dataset_id:
                 if path_to_remove in item.get("irods_paths", []):
@@ -121,6 +120,15 @@ class DvnOperations:
             )
         self.validate_ops_format()
         self.save()
+
+    def get_paths(self, dataverse_url: str, dataset_id: str):
+        """Return  irods_paths for a dataset."""
+        if dataverse_url not in self.ops:
+            return None
+        if "add_file" not in self.ops[dataverse_url]:
+            return None
+
+        return self._get_paths_for_dataset(dataset_id, self.ops[dataverse_url]["add_file"])
 
     def save(self):
         """Save the operations object to json."""

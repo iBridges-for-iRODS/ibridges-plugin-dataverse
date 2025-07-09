@@ -1,9 +1,11 @@
 """Create the commands to interact with datasets."""
 
 import ast
+import shutil
 import warnings
 from pathlib import Path
 
+from ibridges import IrodsPath, download
 from ibridges.cli.base import BaseCliCommand
 from ibridges.cli.util import parse_remote
 
@@ -78,11 +80,13 @@ class CliDvnCreateDataset(BaseCliCommand):
                 subject = None
             authors = CliDvnCreateDataset._remove_prefix("authors", meta_items)
             if len(authors) > 1:
-                p = ("[{'authorName': 'LastAuthor1, FirstAuthor1', "
-                     "'authorAffiliation': 'AuthorAffiliation1'}, "
-                     "{'authorName': 'LastAuthor2, FirstAuthor2', "
-                     "'authorAffiliation': 'AuthorAffiliation1'}, "
-                     "]")
+                p = (
+                    "[{'authorName': 'LastAuthor1, FirstAuthor1', "
+                    "'authorAffiliation': 'AuthorAffiliation1'}, "
+                    "{'authorName': 'LastAuthor2, FirstAuthor2', "
+                    "'authorAffiliation': 'AuthorAffiliation1'}, "
+                    "]"
+                )
                 parser.error(f"Please provide authors: 'authors:{p}'.")
             elif len(authors) == 1:
                 authors = authors[0]
@@ -90,26 +94,33 @@ class CliDvnCreateDataset(BaseCliCommand):
                 authors = None
             contacts = CliDvnCreateDataset._remove_prefix("contacts", meta_items)
             if len(contacts) > 1:
-                p = ("[{'datasetContactEmail': 'ContactEmail1@mailinator.com', "
-                     "'datasetContactName': 'LastContact1, FirstContact1'},"
-                     "{'datasetContactEmail': 'ContactEmail2@mailinator.com', "
-                     "'datasetContactName': 'LastContact2, FirstContact2'}]")
+                p = (
+                    "[{'datasetContactEmail': 'ContactEmail1@mailinator.com', "
+                    "'datasetContactName': 'LastContact1, FirstContact1'},"
+                    "{'datasetContactEmail': 'ContactEmail2@mailinator.com', "
+                    "'datasetContactName': 'LastContact2, FirstContact2'}]"
+                )
                 parser.error(f"Please provide authors: 'contacts:{p}'.")
             else:
                 contacts = None
             description = CliDvnCreateDataset._remove_prefix("description", meta_items)
             if len(description) > 1:
-                p = ("description:[{'dsDescriptionValue': 'DescriptionText'},'"
-                     "'dsDescriptionValue': 'DescriptionText2'}]")
+                p = (
+                    "description:[{'dsDescriptionValue': 'DescriptionText'},'"
+                    "'dsDescriptionValue': 'DescriptionText2'}]"
+                )
                 parser.error(f"Please provide authors: 'descriptions:{p}'.")
             else:
                 description = None
-            dvn_api.create_dataset(args.dataverse_id, title, subject,
-                                   CliDvnCreateDataset._cast(authors),
-                                   CliDvnCreateDataset._cast(contacts),
-                                   CliDvnCreateDataset._cast(description),
-                                   verbose=True)
-
+            dvn_api.create_dataset(
+                args.dataverse_id,
+                title,
+                subject,
+                CliDvnCreateDataset._cast(authors),
+                CliDvnCreateDataset._cast(contacts),
+                CliDvnCreateDataset._cast(description),
+                verbose=True,
+            )
 
     @classmethod
     def _cast(cls, my_list):
@@ -122,7 +133,8 @@ class CliDvnCreateDataset(BaseCliCommand):
 
     @classmethod
     def _remove_prefix(cls, prefix, items):
-        return [s.removeprefix(prefix+":").strip() for s in items if s.startswith(prefix)]
+        return [s.removeprefix(prefix + ":").strip() for s in items if s.startswith(prefix)]
+
 
 class CliDvnAddDatasetMeta(BaseCliCommand):
     """Add extra metadata to a dataset."""
@@ -145,6 +157,7 @@ class CliDvnAddDatasetMeta(BaseCliCommand):
     def run_shell(session, parser, args):
         """Run init is not available for shell."""
         print(args)
+
 
 class CliDvnAddFile(BaseCliCommand):
     """Subcommand to add (a) file(s) to a dataset."""
@@ -237,6 +250,7 @@ class CliDvnRmFile(BaseCliCommand):
                 continue
             ops.rm_file(cur_url, args.dataset, str(irods_path))
 
+
 class CliDvnStatus(BaseCliCommand):
     """Summarise the changes to the dataset(s)."""
 
@@ -264,12 +278,51 @@ class CliDvnPush(BaseCliCommand):
             "dataset_id",
             help="The name/id of the dataset to send to dataverse.",
             type=str,
-            default=None,
-            nargs="*",
         )
         return parser
 
     @staticmethod
     def run_shell(session, parser, args):
         """Run init is not available for shell."""
-        print(args)
+        ops = DvnOperations()
+
+        dvn_conf = DVNConf(parser)
+        cur_url = dvn_conf.cur_dvn
+
+        dvn_api = Dataverse(cur_url, dvn_conf.get_entry(cur_url)[1]["token"])
+
+        if not dvn_api.dataset_exists(args.dataset_id):
+            parser.error(f"{args.dataset_id} does not exist on {cur_url}")
+
+        # get objs under "add_file" for the dataset
+        obj_paths = ops.get_paths(cur_url, args.dataset_id)
+
+        temp_dir = Path.home() / ".dvn" / "data"
+        temp_dir.mkdir(exist_ok=True)
+        print("Data stored in ", temp_dir)
+
+        uploaded = []
+
+        for irods_path in obj_paths:
+            irods_path = IrodsPath(session, irods_path)
+            if irods_path.dataobject_exists():
+                print(irods_path)
+                try:
+                    local_path = temp_dir / irods_path.name
+                    counter = 1
+                    while local_path.exists():
+                        local_path = temp_dir / (irods_path.name + "_" + str(counter))
+                        counter += 1
+                    download(session, irods_path, local_path, overwrite=True)
+                    print(f"Downloaded {irods_path} --> {local_path}")
+                    dvn_api.add_datafile_to_dataset(args.dataset_id, local_path)
+                    print(f"Uploaded {local_path} --> {args.dataset_id}")
+                    uploaded.append(irods_path)
+                except Exception as err: # pylint: disable=W0718
+                    warnings.warn(f"Error in download and upload: {repr(err)}.")
+
+            else:
+                warnings.warn(f"{irods_path} does nor exist or is collection. Skip.")
+        for item in uploaded:
+            ops.rm_file(cur_url, args.dataset_id, str(item))
+        shutil.rmtree(temp_dir)
