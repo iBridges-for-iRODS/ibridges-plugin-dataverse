@@ -3,13 +3,13 @@ import argparse
 
 from ibridges.cli.base import BaseCliCommand
 
-from ibridgescontrib.ibridgesdvn.dvn_config import DVNConf
+from ibridgescontrib.ibridgesdvn.dvn_config import DVNConf, show_available
 
 class CliDvnAlias(BaseCliCommand):
     """Subcommand to get information from the server."""
 
-    names = ["dvnalias"]
-    description = "Print existing aliases or create new ones."
+    names = ["dv-setup"]
+    description = "Print existing Dataverse configurations or create new ones."
     examples = ["some_alias https://demo.dataverse.nl", "other_alias --delete"]
 
     @classmethod
@@ -48,12 +48,7 @@ class CliDvnAlias(BaseCliCommand):
 
         # Show available and selected aliases.
         if args.alias is None:
-            for url, entry in dvn_conf.dvns.items():
-                prefix = " "
-                if dvn_conf.cur_dvn in (entry.get("alias", None), url):
-                    prefix = "*"
-                cur_alias = entry.get("alias", "[no alias]")
-                print(f"{prefix} {cur_alias} -> {url}")
+            show_available(dvn_conf)
             return
 
         # Delete alias
@@ -70,3 +65,4 @@ class CliDvnAlias(BaseCliCommand):
             parser.error(f"Supplied URL '{url}' is not a valid URL.")
 
         dvn_conf.set_alias(args.alias, url)
+        show_available(dvn_conf)

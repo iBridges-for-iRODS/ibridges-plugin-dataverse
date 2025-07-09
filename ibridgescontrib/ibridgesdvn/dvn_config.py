@@ -79,7 +79,7 @@ class DVNConf:
                 warnings.warn(
                     "Current Dataverse is not available, switching to first available."
                 )
-                self.cur_env = list(self.dvns)[0]
+                self.cur_dvn = list(self.dvns)[0]
                 changed = True
         except ValueError as exc:
             print(exc)
@@ -114,7 +114,10 @@ class DVNConf:
         """Save the configuration back to the configuration file."""
         Path(self.config_path).parent.mkdir(exist_ok=True, parents=True)
         with open(self.config_path, "w", encoding="utf-8") as handle:
-            json.dump({"dvns": self.dvns}, handle, indent=4)
+            json.dump(
+                {"cur_dvn": self.cur_dvn,
+                 "dvns": self.dvns},
+                handle, indent=4)
 
     def get_entry(self, url_or_alias: Union[str, None] = None) -> tuple[str, dict]:
         """Get the url and contents that belongs to a url or alias.
@@ -225,3 +228,13 @@ class DVNConf:
             return all([result.scheme, result.netloc])
         except ValueError:
             return False
+
+def show_available(dvn_conf):
+    """Print available Dataverse configurations and highlight active one."""
+    for url, entry in dvn_conf.dvns.items():
+        prefix = " "
+        if dvn_conf.cur_dvn in (entry.get("alias", None), url):
+            prefix = "*"
+        cur_alias = entry.get("alias", "[no alias]")
+        print(f"{prefix} {cur_alias} -> {url}")
+    return

@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0", "setuptools-scm[toml]>=6.2"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ibridges-info"
+name = "ibridgesdvn"
 authors = [
     { name = "Christine Staiger", email = "c.staiger@uu.nl" },
 ]
@@ -46,8 +46,8 @@ test = [
 ]
 
 [project.entry-points."ibridges.shell"]
-dvnalias = "ibridgescontrib.ibridgesdvn:ALIAS_COMMANDS"
-dvninit = "ibridgescontrib.ibridgesdvn:INIT_COMMANDS"
+dv-alias = "ibridgescontrib.ibridgesdvn:SETUP_COMMANDS"
+dv-init = "ibridgescontrib.ibridgesdvn:INIT_COMMANDS"
 
 [tool.setuptools]
 packages = ["ibridgescontrib"]

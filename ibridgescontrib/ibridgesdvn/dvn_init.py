@@ -3,13 +3,13 @@ import argparse
 from getpass import getpass
 
 from ibridges.cli.base import BaseCliCommand
-from ibridgescontrib.ibridgesdvn.dvn_config import DVNConf
+from ibridgescontrib.ibridgesdvn.dvn_config import DVNConf, show_available
 
 
 class CliDvnInit(BaseCliCommand):
     """Subcommand to initialize ibridges."""
 
-    names = ["dvninit"]
+    names = ["dv-init"]
     description = "Provide token and store for future use"
     examples = ["", "some_url", "some_alias"]
 
@@ -45,5 +45,5 @@ class CliDvnInit(BaseCliCommand):
             token = sys.stdin.readline().rstrip()
         
         entry["token"] = token
-        print(dvn, entry)
         dvn_conf.save()
+        show_available(dvn_conf)
