@@ -44,6 +44,7 @@ class CliDvnCreateDataset(BaseCliCommand):
     @staticmethod
     def run_shell(session, parser, args):
         """Run init is not available for shell."""
+        # pylint: disable=R0912
         dvn_conf = DVNConf(parser)
         cur_url = dvn_conf.cur_dvn
         cur_token = dvn_conf.get_entry(cur_url)[1]["token"]
@@ -57,7 +58,7 @@ class CliDvnCreateDataset(BaseCliCommand):
             parser.error(f"Cannot create dataset. Dataverse {args.dataverse_id} does not exist.")
 
         if args.metajson:
-             dvn_api.create_dataset_with_json(args.dataverse_id, args.metajson)
+            dvn_api.create_dataset_with_json(args.dataverse_id, args.metajson)
 
         if args.metadata:
             meta_items = args.metadata.split(";")
