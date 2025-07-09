@@ -10,7 +10,7 @@ from pyDataverse.exceptions import ApiAuthorizationError
 from pyDataverse.models import Datafile, Dataset
 from pyDataverse.utils import read_file
 
-from ibridgescontrib.ibridgesdvn.json_templates import dataset_json
+from ibridgescontrib.ibridgesdvn.json_templates import DATASET_JSON
 
 
 class Dataverse:
@@ -231,7 +231,7 @@ class Dataverse:
             raise ValueError("Title must not be empty.")
 
         ds = Dataset()
-        ds.from_json(dataset_json)
+        ds.from_json(DATASET_JSON)
         ds.set({"title": title})
         if subject:
             ds.set({"subject": subject})
