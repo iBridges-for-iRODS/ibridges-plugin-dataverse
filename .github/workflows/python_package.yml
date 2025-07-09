@@ -1,0 +1,73 @@
+# This action is based on Github's default starter workflow for Python at
+# https://github.com/actions/starter-workflows/blob/master/ci/python-package.yml
+# (C) Github, MIT License
+
+name: Python package
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  build:
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        include:
+          - os: windows-latest
+            python-version: "3.12"
+          - os: macos-latest
+            python-version: "3.12"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install ".[test]"
+
+      - name: Test with pytest
+        run: |
+          pytest tests
+          
+      - name: Lint with PyLint
+        run: |
+          pylint ibridges
+          
+      - name: Check types with MyPy
+        run: |
+          mypy ibridges
+
+  linting:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+
+      - name: Install dependencies
+        run: |
+          pip install ".[test]"
+
+      - name: Lint with Ruff
+        run: |
+          ruff check ibridges
