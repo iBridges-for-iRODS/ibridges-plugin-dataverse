@@ -10,8 +10,10 @@ from pyDataverse.exceptions import ApiAuthorizationError
 from pyDataverse.models import Datafile, Dataset
 from pyDataverse.utils import read_file
 
+from ibridgescontrib.ibridgesdvn.json_templates import dataset_json
 
-class DataverseOperations:
+
+class Dataverse:
     """A utility class to interact with a Dataverse instance using the provided URL and API token.
 
     This class supports authentication, dataset management, and metadata retrieval.
@@ -112,7 +114,7 @@ class DataverseOperations:
         with Client() as client:
             response = client.send(request)
 
-        if response.status_code == 200:
+        if response.status_code in range(200, 300):
             return response.json()
         raise HTTPError(f"{response.status_code}, {response.reason_phrase}")
 
@@ -133,18 +135,52 @@ class DataverseOperations:
 
         """
         response = self.api.get_dataset(f"doi:{data_id}")
-        if response.status_code == 200:
+        if response.status_code in range(200, 300):
             return response.json()
         raise HTTPError(f"{response.status_code}, {response.reason_phrase}")
+
+    def create_dataset_with_json(self, dataverse: str, metadata: Path, verbose: bool = False):
+        """Create a new dataset from a json metadata file.
+
+        Parameters
+        ----------
+        dataverse:
+            The name of the Dataverse Collection where the dataset will be created.
+        metadata:
+            The path to a valid Dataverse Dataset metadata file.
+        verbose:
+            Print summary if True.
+
+        """
+        if dataverse is None:
+            raise ValueError("Dataverse name must not be empty.")
+
+        ds = Dataset()
+        ds.from_json(read_file(str(metadata)))
+
+        if verbose:
+            print("Dataset metadata ok:", ds.validate_json())
+            print(ds.get())
+
+        if not ds.validate_json():
+            raise ValueError("Something is wrong with the dataset's metadata.")
+
+        response = self.api.create_dataset(dataverse, ds.json())
+
+        if response.status_code not in range(200, 300):
+            raise HTTPError(f"{response.status_code}, {response.reason_phrase}")
+
+        return response
+
 
     def create_dataset(
         self,
         dataverse: str,
         title: str,
-        subject: str,
-        authors: list[dict],
-        contacts: list[dict],
-        description: list[dict],
+        subject: str=None,
+        authors: list[dict]=None,
+        contacts: list[dict]=None,
+        description: list[dict]=None,
         verbose: bool = True,
     ):  # pylint: disable=R0913, R0917
         """Create a new dataset in a specified Dataverse repository.
@@ -193,30 +229,30 @@ class DataverseOperations:
             raise ValueError("Dataverse name must not be empty.")
         if title is None:
             raise ValueError("Title must not be empty.")
-        if description is None:
-            raise ValueError("Description must not be empty.")
-        if subject is None:
-            raise ValueError("Subject must not be empty.")
-        if authors is None or len(authors) == 0:
-            raise ValueError("There must be at least one author.")
-        if contacts is None or len(contacts) == 0:
-            raise ValueError("There must be at least one contact.")
 
         ds = Dataset()
-        ds_filename = "dataset.json"
-        ds.from_json(read_file(ds_filename))
+        ds.from_json(dataset_json)
         ds.set({"title": title})
-        ds.set({"subject": subject})
-        ds.set({"author": authors})
-        ds.set({"datasetContact": contacts})
-        ds.set({"dsDescription": description})
+        if subject:
+            ds.set({"subject": subject})
+        if authors:
+            ds.set({"author": authors})
+        if contacts:
+            ds.set({"datasetContact": contacts})
+        if description:
+            ds.set({"dsDescription": description})
 
         if verbose:
+            print("Dataset metadata ok:", ds.validate_json())
             print(ds.get())
+
+
+        if not ds.validate_json():
+            raise ValueError("Something is wrong with the dataset's metadata.")
 
         response = self.api.create_dataset(dataverse, ds.json())
 
-        if response.status_code != 200:
+        if response.status_code not in range(200, 300):
             raise HTTPError(f"{response.status_code}, {response.reason_phrase}")
 
     def add_datafile_to_dataset(self, dataset_id: str, file_path: Path, verbose: bool = True):
@@ -251,5 +287,5 @@ class DataverseOperations:
 
         response = self.api.upload_datafile(f"doi:{dataset_id}", file_path, df.json())
 
-        if response.status_code != 200:
+        if response.status_code in range(200, 300):
             raise HTTPError(f"{response.status_code}, {response.reason_phrase}")
