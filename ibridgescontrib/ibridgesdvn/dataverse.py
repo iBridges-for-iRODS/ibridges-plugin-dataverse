@@ -139,6 +139,11 @@ class Dataverse:
             return response.json()
         raise HTTPError(f"{response.status_code}, {response.reason_phrase}")
 
+    def dataset_exists(self, data_id):
+        """Look up if data set can be found in Dataverse."""
+        response = self.api.get_dataset(f"doi:{data_id}")
+        return response.status_code in range(200, 300)
+
     def create_dataset_with_json(self, dataverse: str, metadata: Path, verbose: bool = False):
         """Create a new dataset from a json metadata file.
 
