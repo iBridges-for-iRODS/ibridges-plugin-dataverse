@@ -177,15 +177,14 @@ class Dataverse:
 
         return response
 
-
     def create_dataset(
         self,
         dataverse: str,
         title: str,
-        subject: str=None,
-        authors: list[dict]=None,
-        contacts: list[dict]=None,
-        description: list[dict]=None,
+        subject: str = None,
+        authors: list[dict] = None,
+        contacts: list[dict] = None,
+        description: list[dict] = None,
         verbose: bool = True,
     ):  # pylint: disable=R0913, R0917
         """Create a new dataset in a specified Dataverse repository.
@@ -251,7 +250,6 @@ class Dataverse:
             print("Dataset metadata ok:", ds.validate_json())
             print(ds.get())
 
-
         if not ds.validate_json():
             raise ValueError("Something is wrong with the dataset's metadata.")
 
@@ -292,5 +290,5 @@ class Dataverse:
 
         response = self.api.upload_datafile(f"doi:{dataset_id}", file_path, df.json())
 
-        if response.status_code in range(200, 300):
+        if response.status_code not in range(200, 300):
             raise HTTPError(f"{response.status_code}, {response.reason_phrase}")

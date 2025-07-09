@@ -1,5 +1,6 @@
 """Metadata templates for Dataverse."""
-DATASET_JSON= """
+
+DATASET_JSON = """
 {
   "datasetVersion": {
     "metadataBlocks": {
