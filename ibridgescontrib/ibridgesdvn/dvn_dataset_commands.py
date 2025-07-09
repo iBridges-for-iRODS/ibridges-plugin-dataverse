@@ -1,12 +1,15 @@
 """Create the commands to interact with datasets."""
 
 import ast
+import warnings
 from pathlib import Path
 
 from ibridges.cli.base import BaseCliCommand
+from ibridges.cli.util import parse_remote
 
 from ibridgescontrib.ibridgesdvn.dataverse import Dataverse
 from ibridgescontrib.ibridgesdvn.dvn_config import DVNConf
+from ibridgescontrib.ibridgesdvn.dvn_operations import DvnOperations
 
 
 class CliDvnCreateDataset(BaseCliCommand):
@@ -143,36 +146,12 @@ class CliDvnAddDatasetMeta(BaseCliCommand):
         """Run init is not available for shell."""
         print(args)
 
-
-class CliDvnSwitchDataset(BaseCliCommand):
-    """Subcommand to switch to another dataset."""
-
-    names = ["dv-switch-ds"]
-    description = "Switch to another dataset."
-    examples = ["new_dataset_name"]
-
-    @classmethod
-    def _mod_parser(cls, parser):
-        parser.add_argument(
-            "dataset",
-            help="The name/id of the new dataset.",
-            type=str,
-            default=None,
-        )
-        return parser
-
-    @staticmethod
-    def run_shell(session, parser, args):
-        """Run init is not available for shell."""
-        print(args)
-
-
 class CliDvnAddFile(BaseCliCommand):
     """Subcommand to add (a) file(s) to a dataset."""
 
     names = ["dv-add-file"]
     description = "Mark one or more iRODS data objects to be uploaded to a Dataverse dataset."
-    examples = ["new_dataset_name irods:path1 irods:path2"]
+    examples = ["dataset_name irods:path1 irods:path2"]
 
     @classmethod
     def _mod_parser(cls, parser):
@@ -194,7 +173,27 @@ class CliDvnAddFile(BaseCliCommand):
     @staticmethod
     def run_shell(session, parser, args):
         """Run init is not available for shell."""
-        print(args)
+        ops = DvnOperations()
+        dvn_conf = DVNConf(parser)
+        cur_url = dvn_conf.cur_dvn
+        cur_token = dvn_conf.get_entry(cur_url)[1]["token"]
+        ops.show()
+        dvn_api = Dataverse(cur_url, cur_token)
+        if not dvn_api.dataset_exists(args.dataset):
+            parser.error(f"Cannot mark data file, {args.dataset} does not exist.")
+
+        for ipath in args.remote_path:
+            irods_path = parse_remote(ipath, session)
+            if not irods_path.exists():
+                warnings.warn(f"{irods_path} does not exist, skip!")
+                continue
+            if irods_path.collection_exists():
+                warnings.warn(f"{irods_path} is not a data object, skip!")
+                continue
+
+            ops.add_file(cur_url, args.dataset, str(irods_path))
+
+        ops.show()
 
 
 class CliDvnRmFile(BaseCliCommand):
@@ -224,27 +223,32 @@ class CliDvnRmFile(BaseCliCommand):
     @staticmethod
     def run_shell(session, parser, args):
         """Run init is not available for shell."""
-        print(args)
+        ops = DvnOperations()
+        dvn_conf = DVNConf(parser)
+        cur_url = dvn_conf.cur_dvn
 
+        for ipath in args.remote_path:
+            irods_path = parse_remote(ipath, session)
+            if not irods_path.exists():
+                warnings.warn(f"{irods_path} does not exist, skip!")
+                continue
+            if irods_path.collection_exists():
+                warnings.warn(f"{irods_path} is not a data object, skip!")
+                continue
+            ops.rm_file(cur_url, args.dataset, str(irods_path))
 
 class CliDvnStatus(BaseCliCommand):
     """Summarise the changes to the dataset(s)."""
 
     names = ["dv-status"]
     description = "List all local changes to the dataset(s)."
-    examples = ["", "dataset_id"]
-
-    @classmethod
-    def _mod_parser(cls, parser):
-        parser.add_argument(
-            "dataset", help="The name/id of the dataset.", type=str, default=None, nargs="*"
-        )
-        return parser
+    examples = [""]
 
     @staticmethod
     def run_shell(session, parser, args):
         """Run init is not available for shell."""
-        print(args)
+        ops = DvnOperations()
+        ops.show()
 
 
 class CliDvnPush(BaseCliCommand):

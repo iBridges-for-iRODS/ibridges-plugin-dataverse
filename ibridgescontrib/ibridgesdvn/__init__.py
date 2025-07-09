@@ -7,7 +7,6 @@ from ibridgescontrib.ibridgesdvn.dvn_dataset_commands import (
     CliDvnPush,
     CliDvnRmFile,
     CliDvnStatus,
-    CliDvnSwitchDataset,
 )
 from ibridgescontrib.ibridgesdvn.dvn_init import CliDvnInit, CliDvnSwitch
 from ibridgescontrib.ibridgesdvn.dvn_setup import CliDvnAlias
@@ -19,6 +18,5 @@ PUSH_COMMANDS = [CliDvnPush]
 STATUS_COMMANDS = [CliDvnStatus]
 RM_FILE_COMMANDS = [CliDvnRmFile]
 ADD_FILE_COMMANDS = [CliDvnAddFile]
-SWITCH_DS_COMMANDS = [CliDvnSwitchDataset]
 META_DS_COMMANDS = [CliDvnAddDatasetMeta]
 CREATE_DS_COMMANDS = [CliDvnCreateDataset]

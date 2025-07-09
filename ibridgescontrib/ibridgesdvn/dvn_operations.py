@@ -57,22 +57,27 @@ class DvnOperations:
     def _get_paths_for_dataset(self, dataset_id, items):
         for item in items:
             if item["dataset"] == dataset_id:
-                return item["irods_paths"]
+                if "irods_paths" in item:
+                    return item["irods_paths"]
         return None
 
     def _add_path_to_dataset(self, dataset_id, new_path, items):
         for item in items:
             if item["dataset"] == dataset_id:
-                item["irods_paths"].append(new_path)
+                if "irods_paths" not in item:
+                    item["irods_paths"] = [new_path]
+                else:
+                    item["irods_paths"].append(new_path)
                 break
 
     def _remove_path_from_dataset(self, dataset_id, path_to_remove, items):
+        print(items)
         for item in items:
             if item["dataset"] == dataset_id:
                 if path_to_remove in item.get("irods_paths", []):
                     item["irods_paths"].remove(path_to_remove)
 
-    def add_file(self, dataverse_url: str, dataset_id: str, irods_paths: list):
+    def add_file(self, dataverse_url: str, dataset_id: str, irods_path: str):
         """Add file to list."""
         if dataverse_url in self.ops:
             dv_entry = self.ops[dataverse_url]["add_file"]
@@ -80,26 +85,25 @@ class DvnOperations:
                 registered_paths = self._get_paths_for_dataset(
                     dataset_id, self.ops[dataverse_url]["add_file"]
                 )
-                for path in irods_paths:
-                    if path not in registered_paths:
-                        self._add_path_to_dataset(
-                            dataset_id, path, self.ops[dataverse_url]["add_file"]
-                        )
+                if irods_path not in registered_paths:
+                    self._add_path_to_dataset(
+                        dataset_id, irods_path, self.ops[dataverse_url]["add_file"]
+                    )
             else:
                 # dataset_id does not exist yet
-                new_entry = {"dataset": dataset_id, "irods_paths": irods_paths}
+                new_entry = {"dataset": dataset_id, "irods_paths": [irods_path]}
                 dv_entry.append(new_entry)
 
         else:
             # url does not exist
             self.ops[dataverse_url] = {
-                "add_file": [{"dataset": dataset_id, "irods_paths": irods_paths}]
+                "add_file": [{"dataset": dataset_id, "irods_paths": [irods_path]}]
             }
 
         self.validate_ops_format()
         self.save()
 
-    def rm_file(self, dataverse_url: str, dataset_id: str, irods_paths: list):
+    def rm_file(self, dataverse_url: str, dataset_id: str, irods_path: str):
         """Remove file from the operations."""
         if dataverse_url not in self.ops:
             warnings.warn(f"No operations found for {dataverse_url}. Nothing to do.. Exit.")
@@ -111,11 +115,10 @@ class DvnOperations:
             dataset_id, self.ops[dataverse_url]["add_file"]
         )
 
-        for path in irods_paths:
-            if path in registered_paths:
-                self._remove_path_from_dataset(
-                    dataset_id, path, self.ops[dataverse_url]["add_file"]
-                )
+        if irods_path in registered_paths:
+            self._remove_path_from_dataset(
+                dataset_id, irods_path, self.ops[dataverse_url]["add_file"]
+            )
         self.validate_ops_format()
         self.save()
 
