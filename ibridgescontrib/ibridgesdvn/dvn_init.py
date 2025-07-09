@@ -1,8 +1,11 @@
-import sys
+"""Initialise and switch to Dataverse configuration."""
+
 import argparse
+import sys
 from getpass import getpass
 
 from ibridges.cli.base import BaseCliCommand
+
 from ibridgescontrib.ibridgesdvn.dvn_config import DVNConf, show_available
 
 
@@ -35,18 +38,18 @@ class CliDvnInit(BaseCliCommand):
         parser = cls.get_parser(argparse.ArgumentParser)
         dvn_conf = DVNConf(parser)
         dvn_conf.set_dvn(args.url_or_alias)
-        dvn, entry = DVNConf(parser).get_entry()
-        
-        
+        _, entry = DVNConf(parser).get_entry()
+
         if sys.stdin.isatty() or "ipykernel" in sys.modules:
             token = getpass(f"Your Dataverse token for {args.url_or_alias} : ")
         else:
             print(f"Your Dataverse token for {args.url_or_alias} : ")
             token = sys.stdin.readline().rstrip()
-        
+
         entry["token"] = token
         dvn_conf.save()
         show_available(dvn_conf)
+
 
 class CliDvnSwitch(BaseCliCommand):
     """Subcommand to switch to Dataverse configuration."""
