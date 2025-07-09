@@ -38,7 +38,7 @@ class CliDvnInit(BaseCliCommand):
         parser = cls.get_parser(argparse.ArgumentParser)
         dvn_conf = DVNConf(parser)
         dvn_conf.set_dvn(args.url_or_alias)
-        _, entry = DVNConf(parser).get_entry()
+        url, entry = DVNConf(parser).get_entry()
 
         if sys.stdin.isatty() or "ipykernel" in sys.modules:
             token = getpass(f"Your Dataverse token for {args.url_or_alias} : ")
@@ -47,6 +47,7 @@ class CliDvnInit(BaseCliCommand):
             token = sys.stdin.readline().rstrip()
 
         entry["token"] = token
+        dvn_conf.dvns[url] = entry
         dvn_conf.save()
         show_available(dvn_conf)
 
