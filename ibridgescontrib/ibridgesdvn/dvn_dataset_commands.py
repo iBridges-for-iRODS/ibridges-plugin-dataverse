@@ -190,7 +190,6 @@ class CliDvnAddFile(BaseCliCommand):
         dvn_conf = DVNConf(parser)
         cur_url = dvn_conf.cur_dvn
         cur_token = dvn_conf.get_entry(cur_url)[1]["token"]
-        ops.show()
         dvn_api = Dataverse(cur_url, cur_token)
         if not dvn_api.dataset_exists(args.dataset):
             parser.error(f"Cannot mark data file, {args.dataset} does not exist.")
