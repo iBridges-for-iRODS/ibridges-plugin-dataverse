@@ -1,9 +1,11 @@
 """Main plugin file to show info."""
+
 import argparse
 
 from ibridges.cli.base import BaseCliCommand
 
 from ibridgescontrib.ibridgesdvn.dvn_config import DVNConf, show_available
+
 
 class CliDvnAlias(BaseCliCommand):
     """Subcommand to get information from the server."""
@@ -22,14 +24,11 @@ class CliDvnAlias(BaseCliCommand):
             nargs="?",
         )
         parser.add_argument(
-            "url",
-            help="URL to the dataverse instance",
-            type=str,
-            default=None,
-            nargs="?"
+            "url", help="URL to the dataverse instance", type=str, default=None, nargs="?"
         )
         parser.add_argument(
-            "--delete", "-d",
+            "--delete",
+            "-d",
             help="Delete the alias.",
             action="store_true",
         )
@@ -58,11 +57,9 @@ class CliDvnAlias(BaseCliCommand):
 
         if args.url is None:
             parser.error("Supply the URL to the Dataverse server to set the alias.")
-        else:
-            url = args.url
 
-        if not dvn_conf._is_valid_url(url):
-            parser.error(f"Supplied URL '{url}' is not a valid URL.")
+        if not dvn_conf.is_valid_url(args.url):
+            parser.error(f"Supplied URL '{args.url}' is not a valid URL.")
 
-        dvn_conf.set_alias(args.alias, url)
+        dvn_conf.set_alias(args.alias, args.url)
         show_available(dvn_conf)

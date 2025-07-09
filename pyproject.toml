@@ -49,6 +49,13 @@ test = [
 dv-alias = "ibridgescontrib.ibridgesdvn:SETUP_COMMANDS"
 dv-init = "ibridgescontrib.ibridgesdvn:INIT_COMMANDS"
 dv-switch = "ibridgescontrib.ibridgesdvn:SWITCH_COMMANDS"
+dv-push = "ibridgescontrib.ibridgesdvn:PUSH_COMMANDS"
+dv-status = "ibridgescontrib.ibridgesdvn:STATUS_COMMANDS"
+dv-rm-file = "ibridgescontrib.ibridgesdvn:RM_FILE_COMMANDS"
+dv-add-file = "ibridgescontrib.ibridgesdvn:ADD_FILE_COMMANDS"
+dv-switch-ds = "ibridgescontrib.ibridgesdvn:SWITCH_DS_COMMANDS"
+dv-meta-ds = "ibridgescontrib.ibridgesdvn:META_DS_COMMANDS"
+dv-create-ds = "ibridgescontrib.ibridgesdvn:CREATE_DS_COMMANDS"
 
 [tool.setuptools]
 packages = ["ibridgescontrib"]

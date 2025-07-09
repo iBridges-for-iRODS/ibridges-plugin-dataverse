@@ -1,11 +1,11 @@
 """Config functions."""
 
-from pathlib import Path
-import json
 import argparse
+import json
 import warnings
-from urllib.parse import urlparse
+from pathlib import Path
 from typing import Union
+from urllib.parse import urlparse
 
 DVN_CONFIG_FP = Path.home() / ".dvn" / "dvn.json"
 DEMO_DVN = "https://demo.dataverse.org"
@@ -14,8 +14,9 @@ DEMO_DVN = "https://demo.dataverse.org"
 class DVNConf:
     """Interface to the dataverse config file."""
 
-    def __init__(self, parser: argparse.ArgumentParser,
-                 config_path: Union[str, Path] = DVN_CONFIG_FP):
+    def __init__(
+        self, parser: argparse.ArgumentParser, config_path: Union[str, Path] = DVN_CONFIG_FP
+    ):
         """Read configuration file and validate it."""
         self.config_path = config_path
         self.parser = parser
@@ -25,17 +26,13 @@ class DVNConf:
                 dvn_conf = json.load(handle)
                 self.dvns = dvn_conf["dvns"]
                 self.cur_dvn = dvn_conf.get("cur_dvn", DEMO_DVN)
-        except Exception as exc: # pylint: disable=W0718
+        except Exception as exc:  # pylint: disable=W0718
             if isinstance(exc, FileNotFoundError):
-                warnings.warn(
-                    f"{self.config_path} not found. Use default {DVN_CONFIG_FP}."
-                )
+                warnings.warn(f"{self.config_path} not found. Use default {DVN_CONFIG_FP}.")
                 self.reset(ask=False)
             else:
                 print(repr(exc))
-                warnings.warn(
-                    f"{self.config_path} not found. Use default {DVN_CONFIG_FP}."
-                )
+                warnings.warn(f"{self.config_path} not found. Use default {DVN_CONFIG_FP}.")
                 self.reset()
 
         self.validate()
@@ -60,15 +57,11 @@ class DVNConf:
             cur_aliases = set()
             new_dvns = {}
             for url, entry in self.dvns.items():
-                if url != DEMO_DVN and not self._is_valid_url(url):
-                    warnings.warn(
-                        f"Dataverse '{url}' is not a valid URL, " "removing the entry."
-                    )
+                if url != DEMO_DVN and not self.is_valid_url(url):
+                    warnings.warn(f"Dataverse '{url}' is not a valid URL, " "removing the entry.")
                     changed = True
                 elif entry.get("alias", None) in cur_aliases:
-                    warnings.warn(
-                        f"Dataverse '{url}' has a duplicate alias, " "removing..."
-                    )
+                    warnings.warn(f"Dataverse '{url}' has a duplicate alias, " "removing...")
                     changed = True
                 else:
                     new_dvns[url] = entry
@@ -76,9 +69,7 @@ class DVNConf:
                         cur_aliases.add(entry["alias"])
             self.dvns = new_dvns
             if self.cur_dvn not in self.dvns:
-                warnings.warn(
-                    "Current Dataverse is not available, switching to first available."
-                )
+                warnings.warn("Current Dataverse is not available, switching to first available.")
                 self.cur_dvn = list(self.dvns)[0]
                 changed = True
         except ValueError as exc:
@@ -114,10 +105,7 @@ class DVNConf:
         """Save the configuration back to the configuration file."""
         Path(self.config_path).parent.mkdir(exist_ok=True, parents=True)
         with open(self.config_path, "w", encoding="utf-8") as handle:
-            json.dump(
-                {"cur_dvn": self.cur_dvn,
-                 "dvns": self.dvns},
-                handle, indent=4)
+            json.dump({"cur_dvn": self.cur_dvn, "dvns": self.dvns}, handle, indent=4)
 
     def get_entry(self, url_or_alias: Union[str, None] = None) -> tuple[str, dict]:
         """Get the url and contents that belongs to a url or alias.
@@ -165,15 +153,14 @@ class DVNConf:
         url_or_alias = DEMO_DVN if url_or_alias is None else url_or_alias
         try:
             url, _ = self.get_entry(url_or_alias)
-        except KeyError as err:
+        except KeyError:
             url = url_or_alias
             self.dvns[url] = {}
-            if not self._is_valid_url(url):
-                raise self.parser.error(f"Dataverse {url} is not a valid url.") # pylint:disable=raise-missing-from
+            if not self.is_valid_url(url):
+                raise self.parser.error(f"Dataverse {url} is not a valid url.")  # pylint:disable=raise-missing-from
         if self.cur_dvn != url:
             self.cur_dvn = url
         self.save()
-
 
     def set_alias(self, alias: str, url: str):
         """Set an alias for a Dataverse URL.
@@ -182,8 +169,8 @@ class DVNConf:
         ----------
         alias
             Alias to be created.
-        ienv_path
-            Path to the iRODS environment file for the new alias.
+        url
+            Url to the Dataverse instance.
 
         """
         try:
@@ -204,7 +191,6 @@ class DVNConf:
                 print(f"Created alias '{alias}'")
         self.save()
 
-
     def delete_alias(self, alias):
         """Delete the alias and the entry."""
         try:
@@ -221,13 +207,14 @@ class DVNConf:
             self.dvns.pop(url)
         self.save()
 
-
-    def _is_valid_url(self, url):
+    def is_valid_url(self, url):
+        """Check Url format."""
         try:
             result = urlparse(url)
             return all([result.scheme, result.netloc])
         except ValueError:
             return False
+
 
 def show_available(dvn_conf):
     """Print available Dataverse configurations and highlight active one."""
@@ -237,4 +224,3 @@ def show_available(dvn_conf):
             prefix = "*"
         cur_alias = entry.get("alias", "[no alias]")
         print(f"{prefix} {cur_alias} -> {url}")
-    return
