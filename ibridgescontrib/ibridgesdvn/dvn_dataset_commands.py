@@ -294,16 +294,13 @@ class CliDvnPush(BaseCliCommand):
             parser.error(f"{args.dataset_id} does not exist on {cur_url}")
 
         # get objs under "add_file" for the dataset
-        obj_paths = ops.get_paths(cur_url, args.dataset_id)
+        irods_paths = [IrodsPath(session, p) for p in ops.get_paths(cur_url, args.dataset_id)]
 
         temp_dir = Path.home() / ".dvn" / "data"
         temp_dir.mkdir(exist_ok=True)
         print("Data stored in ", temp_dir)
 
-        uploaded = []
-
-        for irods_path in obj_paths:
-            irods_path = IrodsPath(session, irods_path)
+        for irods_path in irods_paths:
             if irods_path.dataobject_exists():
                 print(irods_path)
                 try:
@@ -316,12 +313,11 @@ class CliDvnPush(BaseCliCommand):
                     print(f"Downloaded {irods_path} --> {local_path}")
                     dvn_api.add_datafile_to_dataset(args.dataset_id, local_path)
                     print(f"Uploaded {local_path} --> {args.dataset_id}")
-                    uploaded.append(irods_path)
+                    ops.rm_file(cur_url, args.dataset_id, str(irods_path))
+                    local_path.unlink()
                 except Exception as err: # pylint: disable=W0718
                     warnings.warn(f"Error in download and upload: {repr(err)}.")
 
             else:
                 warnings.warn(f"{irods_path} does nor exist or is collection. Skip.")
-        for item in uploaded:
-            ops.rm_file(cur_url, args.dataset_id, str(item))
         shutil.rmtree(temp_dir)
