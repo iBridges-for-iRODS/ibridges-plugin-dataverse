@@ -302,7 +302,6 @@ class CliDvnPush(BaseCliCommand):
 
         for irods_path in irods_paths:
             if irods_path.dataobject_exists():
-                print(irods_path)
                 try:
                     local_path = temp_dir / irods_path.name
                     counter = 1

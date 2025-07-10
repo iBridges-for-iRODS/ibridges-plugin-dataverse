@@ -75,13 +75,17 @@ ignore_missing_imports = true
 [tool.pylint.'MASTER']
 ignore-patterns="_version.py"
 extension-pkg-whitelist=["PySide6"]
+ignore-paths = [
+  "^ibridgescontrib/ibridgesdvn/uiDataverse\\.py$",
+  "^ibridgescontrib/ibridgesdvn/uiCreateUrl\\.py$"
+]
 
 [tool.pylint.'BASIC']
 good-names=["e", "f", "m"]
 
-
 [tool.ruff]
-exclude = ["_version.py"]
+exclude = ["_version.py", "ibridgescontrib/ibridgesdvn/uiDataverse.py",
+            "ibridgescontrib/ibridgesdvn/uiCreateUrl.py"]
 line-length = 100
 lint.select = ["D", "E", "F", "W", "I", "N"]
 lint.ignore = ["D203", "D213"]

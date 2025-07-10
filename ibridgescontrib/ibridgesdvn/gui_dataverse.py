@@ -1,15 +1,24 @@
 """Example tab class to extend the iBridgesGUI app."""
 import logging
+from pathlib import Path
+import json
 
 import PySide6.QtWidgets
+from PySide6.QtWidgets import QFileDialog
 from ibridges.session import Session
+from ibridges import IrodsPath, download
+
+from ibridgesgui.gui_utils import populate_table
+from ibridgesgui.irods_tree_model import IrodsTreeModel
 
 from ibridgescontrib.ibridgesdvn.dvn_config import DVNConf
 from ibridgescontrib.ibridgesdvn.gui_popup_widgets import CreateDvnURL
-from ibridgescontrib.ibridgesdvn.uiDataverse import Ui_tabDataverse
+from ibridgescontrib.ibridgesdvn.uiDataverse import Ui_Form
+from ibridgescontrib.ibridgesdvn.dataverse import Dataverse
+from ibridgescontrib.ibridgesdvn.dvn_operations import DvnOperations
 
 
-class DataverseTab(PySide6.QtWidgets.QWidget, Ui_tabDataverse):
+class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
     """Example tab for the iBridges GUI."""
 
     name = "Dataverse"
@@ -23,19 +32,23 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_tabDataverse):
         self.session = session
         self.app_name = app_name
         self.dvn_conf = DVNConf(None)
+        self.dvn_api = None
+        self.dvn_ops = DvnOperations()
+        self.url = None
         self.init_tab()
 
     def init_tab(self):
         """Initialise the widgets in the tab."""
         # add Dataverse URLs from config
         self.load_dataverse_conf()
-        self.dv_url_select_box.currentTextChanged.connect(self.dvn_conf.set_dvn)
+        self.dv_url_select_box.currentTextChanged.connect(self._connect_to_dataverse)
 
         self.add_url_button.clicked.connect(self.add_dv_url)
         self.add_url_button.setToolTip("Create a new Dataverse configuration.")
         self.delete_url_button.clicked.connect(self.delete_dv_url)
         self.delete_url_button.setToolTip("Delete a Dataverse configuration.")
         #self.dv_ds_edit --> get dataset id
+        self.dv_ds_edit.textChanged.connect(self.populate_selected_data_table)
         self.dv_create_ds_button.clicked.connect(self.dv_create_ds)
         self.dv_create_ds_button.setToolTip("Create new dataset.")
         #self.selected_data_table --> populate
@@ -45,7 +58,9 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_tabDataverse):
         self.dv_push_button.setToolTip("Upload to Dataverse dataset.")
         self.add_selected_button.clicked.connect(self.dv_add_file)
         self.add_selected_button.setToolTip("Mark file(s) for upload to Dataverse.")
+        self.add_selected_button.setEnabled(False)
         #self.irods_tree_view --> load collections
+        self._init_irods_tree()
 
     def load_dataverse_conf(self):
         """Load or refresh drop down menu for configs."""
@@ -57,7 +72,18 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_tabDataverse):
             self.dv_url_select_box.setCurrentIndex(items.index(self.dvn_conf.cur_dvn))
         else:
             self.dv_url_select_box.setCurrentIndex(0)
+        self._connect_to_dataverse()
 
+    def _connect_to_dataverse(self):
+        self.error_label.clear()
+        cur_url = self.dv_url_select_box.currentText()
+        self.dvn_conf.set_dvn(cur_url)
+        url, entry = self.dvn_conf.get_entry(cur_url)
+        try:
+            self.dvn_api = Dataverse(url, entry["token"])
+            self.url = url
+        except Exception as err:
+            self.error_label(f"Could not connect to {url} with {entry[1]['token']}, {repr(err)}")
 
     def add_dv_url(self):
         """Add a new Dataverse URL with parameters."""
@@ -69,29 +95,140 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_tabDataverse):
     def delete_dv_url(self):
         """Remove a URL from the configurations."""
         cur_url = self.dv_url_select_box.currentText()
-        print("delete", cur_url)
         self.dvn_conf.delete_alias(cur_url)
         self.load_dataverse_conf()
 
     def dv_create_ds(self):
         """Create a dataset."""
-        print("not implemented")
+        self.error_label.clear()
+        if self.dataverse_edit.text() == "":
+            self.error_label.setText("Please provide the ID of a Dataverse Collection.")
+            return
+        if not self.dvn_api:
+            self.error_label.setText(
+                    f"No API connection for {self.dv_url_select_box.currentText()}")
+            return
+        if not self.dvn_api.dataverse_exists(self.dataverse_edit.text()):
+            self.error_label.setText(f"Could not find {self.dataverse_edit.text()}.")
+            return
+        
+        dataverse = self.dataverse_edit.text()
+
+        # Get Metadata file
+        meta_json = self.select_meta_file()
+        response = self.dvn_api.create_dataset_with_json(dataverse, meta_json)
+        doi = response.json()["data"]["persistentId"].split(":")[1] 
+        self.dv_ds_edit.setText(doi)
+        self.logger.info("DATAVERSE: Created Dataset %s", doi)        
+
+    def select_meta_file(self):
+        """Open file selector."""
+        select_file, _ = QFileDialog.getOpenFileName(
+            self,
+            "Select JSON file",
+            str(Path("~").expanduser()),         # directory (3rd positional argument)
+            "JSON Files (*.json);;All Files (*)" # file filter (4th positional argument)
+        )
+
+        return select_file
 
     def dv_rm_file(self):
         """Remove a file from the table of selected files."""
-        print("not implemented")
+        self.error_label.clear()
+        dataset_id = self.dv_ds_edit.text()
+        rows = set(idx.row() for idx in self.selected_data_table.selectedIndexes())
+        for row in rows:
+            path = self.selected_data_table.item(row, 0).text()
+            self.dvn_ops.rm_file(self.url, dataset_id, path)
+        self.populate_selected_data_table()
 
     def dv_push(self):
         """Download all objects in the table and upload to Dataverse dataset."""
-        print("not implemented")
+        self.error_label.clear()
+        dataset_id = self.dv_ds_edit.text()
+        if dataset_id == "":
+            self.error_label.setText("Select a dataset and refresh table.")
+            return
+        if self.selected_data_table.rowCount() == 0:
+            self.error_label.setText("Please add some data from the iRODS tree.")
+            return
+        temp_dir = Path.home() / ".dvn" / "data"
+        temp_dir.mkdir(exist_ok=True)
+        self.logger.info("DATAVERSE: Download data from iRODS to  %s", str(temp_dir))
+        
+        for row in range(self.selected_data_table.rowCount()):
+            irods_path = IrodsPath(self.session, self.selected_data_table.item(row, 0).text())
+            if irods_path.dataobject_exists():
+                try:
+                    local_path = temp_dir / irods_path.name
+                    counter = 1
+                    while local_path.exists():
+                        local_path = temp_dir / (irods_path.name + "_" + str(counter))
+                        counter += 1
+                    download(self.session, irods_path, local_path, overwrite=True)
+                    self.logger.info("DATAVERSE: Download %s --> %s",
+                                     str(irods_path), str(local_path))
+                    self.dvn_api.add_datafile_to_dataset(dataset_id, local_path)
+                    self.logger.info("DATAVERSE: Upload %s --> %s",
+                                     str(local_path), dataset_id)
+                    self.dvn_ops.rm_file(self.url, dataset_id, str(irods_path))
+                    local_path.unlink()
+                except Exception as err: # pylint: disable=W0718
+                    self.logger.error("DATAVERSE: Error in download and upload: %s", repr(err))
+                    self.error_label.setText("Something went wrong, please check the logs.")
+        self.populate_selected_data_table()
+
 
     def dv_add_file(self):
         """Add file from irods tree to table with selected files."""
-        print("not implemented")
+        self.error_label.clear()
+        # Retrieve irods paths
+        irods_selection = self.irods_tree_view.selectedIndexes()
+        if len(irods_selection) == 0:
+            self.error_label.setText("Please select a data object.")
+            return None
+        for idx in irods_selection:
+            irods_path = self.irods_model.irods_path_from_tree_index(idx)
+            if irods_path.dataobject_exists():
+                self.dvn_ops.add_file(self.url, self.dv_ds_edit.text(), str(irods_path))
+            else:
+                print("Not a data object")
+                self.error_label.setText("Please only select data objects.")
+        self.populate_selected_data_table()
 
+    def irods_root(self):
+        """Retrieve lowest visible level in the iRODS tree for the user."""
+        lowest = IrodsPath(self.session).absolute()
+        while lowest.parent.exists() and str(lowest) != "/":
+            lowest = lowest.parent
+        return lowest
 
-    #    """Retrieve info from session and print it to tab elements."""
-    #    self.server.setText(self.session.irods_session.host)
-    #    self.port.setText(str(self.session.irods_session.port))
-    #    self.home.setText(self.session.home)
-    #    self.user.setText(self.session.irods_session.username)
+    def _init_irods_tree(self):
+        root = self.irods_root()
+        self.irods_model = IrodsTreeModel(self.irods_tree_view, root)
+        self.irods_tree_view.setModel(self.irods_model)
+        self.irods_tree_view.expanded.connect(self.irods_model.refresh_subtree)
+        self.irods_model.init_tree()
+
+        # hide unnecessary information
+        self.irods_tree_view.setColumnHidden(1, True)
+        self.irods_tree_view.setColumnHidden(2, True)
+        self.irods_tree_view.setColumnHidden(3, True)
+        self.irods_tree_view.setColumnHidden(4, True)
+        self.irods_tree_view.setColumnHidden(5, True)
+    
+    def populate_selected_data_table(self):
+        self.add_selected_button.setEnabled(True)
+        self.selected_data_table.setRowCount(0)
+        dataset_id = self.dv_ds_edit.text()
+        # gather data from current stored files
+        if dataset_id != "" and self.dvn_api.dataset_exists(dataset_id):
+            if self.dvn_ops.get_paths(self.url, dataset_id):
+                current_paths = [(IrodsPath(self.session, path),
+                                  IrodsPath(self.session, path).size)
+                                    for path in self.dvn_ops.get_paths(self.url, dataset_id)]
+                populate_table(self.selected_data_table, len(current_paths), current_paths)
+            else:
+                self.error_label.setText("No data files stored for dataset.")
+        else:
+            self.error_label.setText("Enter a valid Dataset Idenitifier.")
