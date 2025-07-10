@@ -68,7 +68,7 @@ ibridges dv-switch https://demo.dataverse.org
 
 **Note, that those commands are only available for the CLI and not for the shell. All other commands can be used from the shell.**
 
-## Creating a dataset
+### Creating a dataset
 
 To create a dataset, you will need a specific Dataverse dataset.json which you can provide like this:
 
@@ -80,7 +80,7 @@ Dataset with pid 'doi:10.80227/PDVNL/RZQRAK' created.
 This creates a dataset on the Dataverse we selected with `dv-init` or `dv-switch`, it uses the Dataverse collection `UUscience`. Please adjust to your Dataverse instance. 
 You will need the `10.80227/PDVNL/RZQRAK` part of the pid to add files and to finally upload them to Dataverse, so please save it somewhere.
 
-## Browsing files and adding it to Dataverse
+### Browsing files and adding it to Dataverse
 
 After you created the new Dataset on Dataverse, you can now use the iBridges shell to browse and add files as you go along.
 
@@ -129,7 +129,7 @@ ibshell:research-christine> dv-status
                                              'irods_paths': ['/uu/home/research-christine/my_books/AdventuresSherlockHolmes.txt']}]}}
 ```
 
-## Upload data to dataset
+### Upload data to dataset
 
 Now that you are happy with the marked data, upload them to the dataset:
 

@@ -56,6 +56,9 @@ dv-add-file = "ibridgescontrib.ibridgesdvn:ADD_FILE_COMMANDS"
 dv-meta-ds = "ibridgescontrib.ibridgesdvn:META_DS_COMMANDS"
 dv-create-ds = "ibridgescontrib.ibridgesdvn:CREATE_DS_COMMANDS"
 
+[project.entry-points."ibridges.gui_tab"]
+dv = "ibridgescontrib.ibridgesdvn.gui_dataverse:DataverseTab"
+
 [tool.setuptools]
 packages = ["ibridgescontrib"]
 
@@ -71,6 +74,7 @@ ignore_missing_imports = true
 
 [tool.pylint.'MASTER']
 ignore-patterns="_version.py"
+extension-pkg-whitelist=["PySide6"]
 
 [tool.pylint.'BASIC']
 good-names=["e", "f", "m"]
