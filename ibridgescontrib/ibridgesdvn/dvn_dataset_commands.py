@@ -293,6 +293,7 @@ class CliDvnPush(BaseCliCommand):
 
         if not dvn_api.dataset_exists(args.dataset_id):
             parser.error(f"{args.dataset_id} does not exist on {cur_url}")
+            return
 
         # get objs under "add_file" for the dataset
         irods_paths = [IrodsPath(session, p) for p in ops.get_paths(cur_url, args.dataset_id)]
