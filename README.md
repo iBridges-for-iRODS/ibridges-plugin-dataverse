@@ -35,6 +35,26 @@ ibridges -h
                         alias.
 ```
 
+If you use the iBridges GUI you will be able to select a "Dataverse" view.
+
+## The Dataverse View
+
+![](docs/gui_view.png)
+
+- Step 1: Configure your Dataverse Connection
+	You can add new configurations or delete old ones.
+- Step 2: Select a Dataverse collection to which files should be uploaded.
+	If you do not have a dataset yet, use the
+	"Create New Dataset" button and get a DOI to a newly created dataset.
+- Step 3: Select iRODS data objects from the right pane of the view.
+	With the button "<<" they will be added to the list of data that will be uploaded.
+	You can also delete one or several entries from the list.
+
+When you are happy with the list, click "Upload to Dataverse". Now go to your Dataverse dataset in the browser and finish you data publication.
+
+
+
+
 ## The Dataverse commands
 
 ### Configuring a Dataverse instance
@@ -68,7 +88,7 @@ ibridges dv-switch https://demo.dataverse.org
 
 **Note, that those commands are only available for the CLI and not for the shell. All other commands can be used from the shell.**
 
-## Creating a dataset
+### Creating a dataset
 
 To create a dataset, you will need a specific Dataverse dataset.json which you can provide like this:
 
@@ -80,7 +100,7 @@ Dataset with pid 'doi:10.80227/PDVNL/RZQRAK' created.
 This creates a dataset on the Dataverse we selected with `dv-init` or `dv-switch`, it uses the Dataverse collection `UUscience`. Please adjust to your Dataverse instance. 
 You will need the `10.80227/PDVNL/RZQRAK` part of the pid to add files and to finally upload them to Dataverse, so please save it somewhere.
 
-## Browsing files and adding it to Dataverse
+### Browsing files and adding it to Dataverse
 
 After you created the new Dataset on Dataverse, you can now use the iBridges shell to browse and add files as you go along.
 
@@ -129,7 +149,7 @@ ibshell:research-christine> dv-status
                                              'irods_paths': ['/uu/home/research-christine/my_books/AdventuresSherlockHolmes.txt']}]}}
 ```
 
-## Upload data to dataset
+### Upload data to dataset
 
 Now that you are happy with the marked data, upload them to the dataset:
 

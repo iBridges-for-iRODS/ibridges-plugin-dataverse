@@ -24,7 +24,8 @@ classifiers = [
 ]
 
 dependencies = [
-    "ibridges",
+    "ibridges>=1.5.1, <1.6",
+    "ibridgesgui>=1.5.1, <1.6",
     "pyDataverse",
     "httpx"
 ]
@@ -56,6 +57,9 @@ dv-add-file = "ibridgescontrib.ibridgesdvn:ADD_FILE_COMMANDS"
 dv-meta-ds = "ibridgescontrib.ibridgesdvn:META_DS_COMMANDS"
 dv-create-ds = "ibridgescontrib.ibridgesdvn:CREATE_DS_COMMANDS"
 
+[project.entry-points."ibridges.gui_tab"]
+dv = "ibridgescontrib.ibridgesdvn.gui_dataverse:DataverseTab"
+
 [tool.setuptools]
 packages = ["ibridgescontrib"]
 
@@ -71,13 +75,26 @@ ignore_missing_imports = true
 
 [tool.pylint.'MASTER']
 ignore-patterns="_version.py"
+extension-pkg-whitelist=["PySide6"]
+ignore-paths = [
+  "^ibridgescontrib/ibridgesdvn/uiDataverse\\.py$",
+  "^ibridgescontrib/ibridgesdvn/uiCreateUrl\\.py$",
+  "^ibridgescontrib/ibridgesdvn/uiCreateDataset\\.py$"
+  
+]
 
 [tool.pylint.'BASIC']
 good-names=["e", "f", "m"]
 
+[tool.pylint.'VARIABLES']
+extension-pkg-whitelist="PySide6"
+disable=["E0611", "E0401", "E0401", "E1101",
+         "W0718", "fixme", "too-many-arguments",
+         "R0912", "R0916", "R0911", "R0801", "R0902"]
 
 [tool.ruff]
-exclude = ["_version.py"]
+exclude = ["_version.py", "ibridgescontrib/ibridgesdvn/uiDataverse.py",
+            "ibridgescontrib/ibridgesdvn/uiCreateUrl.py"]
 line-length = 100
 lint.select = ["D", "E", "F", "W", "I", "N"]
 lint.ignore = ["D203", "D213"]

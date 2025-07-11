@@ -29,7 +29,7 @@ class DVNConf:
         except Exception as exc:  # pylint: disable=W0718
             if isinstance(exc, FileNotFoundError):
                 warnings.warn(f"{self.config_path} not found. Use default {DVN_CONFIG_FP}.")
-                self.reset(ask=False)
+                self.reset()
             else:
                 print(repr(exc))
                 warnings.warn(f"{self.config_path} not found. Use default {DVN_CONFIG_FP}.")
@@ -79,24 +79,8 @@ class DVNConf:
         if changed:
             self.save()
 
-    def reset(self, ask: bool = True):
-        """Reset the configuration file to its defaults.
-
-        Parameters
-        ----------
-        ask, optional
-            Ask whether to overwrite the current configuration file, by default True
-
-        """
-        if ask:
-            answer = input(
-                f"The dataverse configuration file {self.config_path} cannot be read, "
-                "reset? (Y/N)"
-            )
-            if answer != "Y":
-                self.parser.error(
-                    "Cannot continue without reading the dataverse configuration file."
-                )
+    def reset(self):
+        """Reset the configuration file to its defaults."""
         self.dvns = {DEMO_DVN: {"alias": "demo"}}
         self.cur_dvn = DEMO_DVN
         self.save()
@@ -150,14 +134,19 @@ class DVNConf:
             in which case the default dataverse will be chosen.
 
         """
+        # Qt sends the url twice, once with value, once empty.
+        if url_or_alias == "":
+            return
         url_or_alias = DEMO_DVN if url_or_alias is None else url_or_alias
         try:
             url, _ = self.get_entry(url_or_alias)
-        except KeyError:
+        except KeyError as exc:
             url = url_or_alias
             self.dvns[url] = {}
             if not self.is_valid_url(url):
-                raise self.parser.error(f"Dataverse {url} is not a valid url.")  # pylint:disable=raise-missing-from
+                if self.parser:
+                    raise self.parser.error(f"Dataverse {url} is not a valid url.")  # pylint:disable=raise-missing-from
+                raise TypeError(f"Dataverse {url} is not a valid url.") from exc
         if self.cur_dvn != url:
             self.cur_dvn = url
         self.save()
@@ -176,7 +165,11 @@ class DVNConf:
         try:
             # Alias already exists change the path
             self.get_entry(alias)
-            self.parser.error(f"Alias '{alias}' already exists. To rename, delete the alias first.")
+            if self.parser:
+                self.parser.error(
+                    f"Alias '{alias}' already exists. To rename, delete the alias first."
+                )
+            raise ValueError(f"Alias '{alias}' already exists. To rename, delete the alias first.")
         except KeyError:
             try:
                 # Path already exists change the alias
@@ -195,14 +188,18 @@ class DVNConf:
         """Delete the alias and the entry."""
         try:
             url, entry = self.get_entry(alias)
-        except KeyError:
-            self.parser.error(f"Cannot delete alias '{alias}'; does not exist.")
+        except KeyError as exc:
+            if self.parser:
+                self.parser.error(f"Cannot delete alias '{alias}'; does not exist.")
+            raise KeyError(f"Cannot delete alias '{alias}'; does not exist.") from exc
 
         if url == DEMO_DVN:
             try:
                 entry.pop("alias")
-            except KeyError:
-                self.parser.error("Cannot remove default irods path from configuration.")
+            except KeyError as exc:
+                if self.parser:
+                    self.parser.error("Cannot remove default Dataverse from configuration.")
+                raise KeyError("Cannot remove default Dataverse from configuration.") from exc
         else:
             self.dvns.pop(url)
         self.save()

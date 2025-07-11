@@ -12,6 +12,7 @@ from ibridges.cli.util import parse_remote
 from ibridgescontrib.ibridgesdvn.dataverse import Dataverse
 from ibridgescontrib.ibridgesdvn.dvn_config import DVNConf
 from ibridgescontrib.ibridgesdvn.dvn_operations import DvnOperations
+from ibridgescontrib.ibridgesdvn.utils import create_unique_filename
 
 
 class CliDvnCreateDataset(BaseCliCommand):
@@ -292,6 +293,7 @@ class CliDvnPush(BaseCliCommand):
 
         if not dvn_api.dataset_exists(args.dataset_id):
             parser.error(f"{args.dataset_id} does not exist on {cur_url}")
+            return
 
         # get objs under "add_file" for the dataset
         irods_paths = [IrodsPath(session, p) for p in ops.get_paths(cur_url, args.dataset_id)]
@@ -302,20 +304,15 @@ class CliDvnPush(BaseCliCommand):
 
         for irods_path in irods_paths:
             if irods_path.dataobject_exists():
-                print(irods_path)
                 try:
-                    local_path = temp_dir / irods_path.name
-                    counter = 1
-                    while local_path.exists():
-                        local_path = temp_dir / (irods_path.name + "_" + str(counter))
-                        counter += 1
+                    local_path = create_unique_filename(temp_dir, irods_path.name)
                     download(session, irods_path, local_path, overwrite=True)
                     print(f"Downloaded {irods_path} --> {local_path}")
                     dvn_api.add_datafile_to_dataset(args.dataset_id, local_path)
                     print(f"Uploaded {local_path} --> {args.dataset_id}")
                     ops.rm_file(cur_url, args.dataset_id, str(irods_path))
                     local_path.unlink()
-                except Exception as err: # pylint: disable=W0718
+                except Exception as err:  # pylint: disable=W0718
                     warnings.warn(f"Error in download and upload: {repr(err)}.")
 
             else:
