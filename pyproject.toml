@@ -24,7 +24,8 @@ classifiers = [
 ]
 
 dependencies = [
-    "ibridges",
+    "ibridges>=1.5.1, <1.6",
+    "ibridgesgui>=1.5.1, <1.6",
     "pyDataverse",
     "httpx"
 ]
@@ -77,7 +78,9 @@ ignore-patterns="_version.py"
 extension-pkg-whitelist=["PySide6"]
 ignore-paths = [
   "^ibridgescontrib/ibridgesdvn/uiDataverse\\.py$",
-  "^ibridgescontrib/ibridgesdvn/uiCreateUrl\\.py$"
+  "^ibridgescontrib/ibridgesdvn/uiCreateUrl\\.py$",
+  "^ibridgescontrib/ibridgesdvn/uiCreateDataset\\.py$"
+  
 ]
 
 [tool.pylint.'BASIC']

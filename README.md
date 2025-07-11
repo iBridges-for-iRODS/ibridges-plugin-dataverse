@@ -35,6 +35,26 @@ ibridges -h
                         alias.
 ```
 
+If you use the iBridges GUI you will be able to select a "Dataverse" view.
+
+## The Dataverse View
+
+![](docs/gui_view.png)
+
+- Step 1: Configure your Dataverse Connection
+	You can add new configurations or delete old ones.
+- Step 2: Select a Dataverse collection to which files should be uploaded.
+	If you do not have a dataset yet, use the
+	"Create New Dataset" button and get a DOI to a newly created dataset.
+- Step 3: Select iRODS data objects from the right pane of the view.
+	With the button "<<" they will be added to the list of data that will be uploaded.
+	You can also delete one or several entries from the list.
+
+When you are happy with the list, click "Upload to Dataverse". Now go to your Dataverse dataset in the browser and finish you data publication.
+
+
+
+
 ## The Dataverse commands
 
 ### Configuring a Dataverse instance

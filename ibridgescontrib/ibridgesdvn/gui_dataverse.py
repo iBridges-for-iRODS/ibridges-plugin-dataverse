@@ -12,7 +12,7 @@ from ibridgesgui.gui_utils import populate_table
 from ibridgesgui.irods_tree_model import IrodsTreeModel
 
 from ibridgescontrib.ibridgesdvn.dvn_config import DVNConf
-from ibridgescontrib.ibridgesdvn.gui_popup_widgets import CreateDvnURL
+from ibridgescontrib.ibridgesdvn.gui_popup_widgets import CreateDvnURL, CreateDataset
 from ibridgescontrib.ibridgesdvn.uiDataverse import Ui_Form
 from ibridgescontrib.ibridgesdvn.dataverse import Dataverse
 from ibridgescontrib.ibridgesdvn.dvn_operations import DvnOperations
@@ -44,20 +44,14 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
         self.dv_url_select_box.currentTextChanged.connect(self._connect_to_dataverse)
 
         self.add_url_button.clicked.connect(self.add_dv_url)
-        self.add_url_button.setToolTip("Create a new Dataverse configuration.")
         self.delete_url_button.clicked.connect(self.delete_dv_url)
-        self.delete_url_button.setToolTip("Delete a Dataverse configuration.")
         #self.dv_ds_edit --> get dataset id
         self.dv_ds_edit.textChanged.connect(self.populate_selected_data_table)
         self.dv_create_ds_button.clicked.connect(self.dv_create_ds)
-        self.dv_create_ds_button.setToolTip("Create new dataset.")
         #self.selected_data_table --> populate
         self.delete_selected_button.clicked.connect(self.dv_rm_file)
-        self.delete_selected_button.setToolTip("Remove file from table.")
         self.dv_push_button.clicked.connect(self.dv_push)
-        self.dv_push_button.setToolTip("Upload to Dataverse dataset.")
         self.add_selected_button.clicked.connect(self.dv_add_file)
-        self.add_selected_button.setToolTip("Mark file(s) for upload to Dataverse.")
         self.add_selected_button.setEnabled(False)
         #self.irods_tree_view --> load collections
         self._init_irods_tree()
@@ -101,36 +95,15 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
     def dv_create_ds(self):
         """Create a dataset."""
         self.error_label.clear()
-        if self.dataverse_edit.text() == "":
-            self.error_label.setText("Please provide the ID of a Dataverse Collection.")
-            return
         if not self.dvn_api:
             self.error_label.setText(
                     f"No API connection for {self.dv_url_select_box.currentText()}")
             return
-        if not self.dvn_api.dataverse_exists(self.dataverse_edit.text()):
-            self.error_label.setText(f"Could not find {self.dataverse_edit.text()}.")
-            return
-        
-        dataverse = self.dataverse_edit.text()
-
-        # Get Metadata file
-        meta_json = self.select_meta_file()
-        response = self.dvn_api.create_dataset_with_json(dataverse, meta_json)
-        doi = response.json()["data"]["persistentId"].split(":")[1] 
-        self.dv_ds_edit.setText(doi)
+        self.error_label.clear()
+        url_widget = CreateDataset(self.dvn_api, self.dv_ds_edit)
+        url_widget.exec()
+        doi = self.dv_ds_edit.text()
         self.logger.info("DATAVERSE: Created Dataset %s", doi)        
-
-    def select_meta_file(self):
-        """Open file selector."""
-        select_file, _ = QFileDialog.getOpenFileName(
-            self,
-            "Select JSON file",
-            str(Path("~").expanduser()),         # directory (3rd positional argument)
-            "JSON Files (*.json);;All Files (*)" # file filter (4th positional argument)
-        )
-
-        return select_file
 
     def dv_rm_file(self):
         """Remove a file from the table of selected files."""
@@ -207,8 +180,11 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
         root = self.irods_root()
         self.irods_model = IrodsTreeModel(self.irods_tree_view, root)
         self.irods_tree_view.setModel(self.irods_model)
+        #self.irods_tree_view.headerItem().setText(0, "")
         self.irods_tree_view.expanded.connect(self.irods_model.refresh_subtree)
         self.irods_model.init_tree()
+        #self.irods_tree_view.setCurrentIndex(self.irods_model.index(0, 0))
+        self.irods_tree_view.expand(self.irods_model.index(0, 0))
 
         # hide unnecessary information
         self.irods_tree_view.setColumnHidden(1, True)
