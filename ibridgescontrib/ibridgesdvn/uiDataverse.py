@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+# pylint: skip-file
+# ruff: noqa: N999, E501, N801, D101, N802, D102, N803, N802, D102, N803
 
 ################################################################################
 ## Form generated from reading UI file 'tabDataverse.ui'

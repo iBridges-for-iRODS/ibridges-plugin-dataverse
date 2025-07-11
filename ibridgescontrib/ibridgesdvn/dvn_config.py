@@ -167,9 +167,9 @@ class DVNConf:
             self.get_entry(alias)
             if self.parser:
                 self.parser.error(
-                        f"Alias '{alias}' already exists. To rename, delete the alias first.")
-            raise ValueError(
-                    f"Alias '{alias}' already exists. To rename, delete the alias first.")
+                    f"Alias '{alias}' already exists. To rename, delete the alias first."
+                )
+            raise ValueError(f"Alias '{alias}' already exists. To rename, delete the alias first.")
         except KeyError:
             try:
                 # Path already exists change the alias

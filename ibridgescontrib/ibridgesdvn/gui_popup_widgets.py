@@ -1,20 +1,23 @@
 """Popoup widgets for Dataverse Tab."""
-from pathlib import Path
-import PySide6.QtCore
 
+from pathlib import Path
+
+import PySide6.QtCore
 from PySide6.QtWidgets import QFileDialog
 
-from ibridgescontrib.ibridgesdvn.uiCreateUrl import Ui_Dialog as ui_create_url
 from ibridgescontrib.ibridgesdvn.uiCreateDataset import Ui_Dialog as ui_create_dataset
+from ibridgescontrib.ibridgesdvn.uiCreateUrl import Ui_Dialog as ui_create_url
 
 
 class CreateDataset(PySide6.QtWidgets.QDialog, ui_create_dataset):
     """Popup window to create a new dataset."""
+
     def __init__(self, dvn_api, return_label):
+        """Init window."""
         super().__init__()
         super().setupUi(self)
         self.dvn_api = dvn_api
-        self.setWindowTitle(f"Create new Dataset.")
+        self.setWindowTitle("Create new Dataset.")
         self.setWindowFlags(PySide6.QtCore.Qt.WindowType.WindowStaysOnTopHint)
         self.ok_button.clicked.connect(self.create)
         self.cancel_button.clicked.connect(self.close)
@@ -44,17 +47,17 @@ class CreateDataset(PySide6.QtWidgets.QDialog, ui_create_dataset):
         self.return_label.setText(doi)
         self.done(0)
 
-        
     def select_meta_file(self):
         """Open file selector."""
         select_file, _ = QFileDialog.getOpenFileName(
             self,
             "Select JSON file",
-            str(Path("~").expanduser()),         # directory (3rd positional argument)
-            "JSON Files (*.json);;All Files (*)" # file filter (4th positional argument)
+            str(Path("~").expanduser()),  # directory (3rd positional argument)
+            "JSON Files (*.json);;All Files (*)",  # file filter (4th positional argument)
         )
 
         self.json_file_label.setText(str(select_file))
+
 
 class CreateDvnURL(PySide6.QtWidgets.QDialog, ui_create_url):
     """Popup window to create a new URL entry."""
@@ -85,7 +88,7 @@ class CreateDvnURL(PySide6.QtWidgets.QDialog, ui_create_url):
             try:
                 _, entry = self.dvn_conf.get_entry()
                 entry["token"] = token
-            except: # pylint: disable=W0702 # noqa: E722
+            except:  # pylint: disable=W0702 # noqa: E722
                 entry = {}
                 entry["token"] = token
 
