@@ -75,6 +75,9 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
     def _connect_to_dataverse(self):
         self.error_label.clear()
         cur_url = self.dv_url_select_box.currentText()
+        if cur_url == "":
+            self.error_label.setText("Please create a Dataverse configuration.")
+            return
         self.dvn_conf.set_dvn(cur_url)
         url, entry = self.dvn_conf.get_entry(cur_url)
         try:
@@ -82,7 +85,8 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
             self.url = url
             self.dv_ds_edit.clear()
         except Exception as err:  # pylint: disable=W0718
-            self.error_label(f"Could not connect to {url} with {entry[1]['token']}, {repr(err)}")
+            self.error_label.setText(
+                    f"Could not connect to {url} with {entry[1]['token']}, {repr(err)}")
 
     def add_dv_url(self):
         """Add a new Dataverse URL with parameters."""

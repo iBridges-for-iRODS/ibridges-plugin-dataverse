@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import os
 import warnings
 from pathlib import Path
 from typing import Union
@@ -20,6 +21,9 @@ class DVNConf:
         """Read configuration file and validate it."""
         self.config_path = config_path
         self.parser = parser
+        if not self.config_path.is_file():
+            os.makedirs(self.config_path.parent)
+            self.reset()
 
         try:
             with open(self.config_path, "r", encoding="utf-8") as handle:
@@ -28,6 +32,7 @@ class DVNConf:
                 self.cur_dvn = dvn_conf.get("cur_dvn", DEMO_DVN)
         except Exception as exc:  # pylint: disable=W0718
             if isinstance(exc, FileNotFoundError):
+                print("File not found")
                 warnings.warn(f"{self.config_path} not found. Use default {DVN_CONFIG_FP}.")
                 self.reset()
             else:
@@ -83,6 +88,7 @@ class DVNConf:
         """Reset the configuration file to its defaults."""
         self.dvns = {DEMO_DVN: {"alias": "demo"}}
         self.cur_dvn = DEMO_DVN
+        print(self.dvns)
         self.save()
 
     def save(self):
