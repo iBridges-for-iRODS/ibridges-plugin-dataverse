@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>886</width>
-    <height>464</height>
+    <height>408</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -190,6 +190,16 @@ QTabWidget#info_tabs
       </spacer>
      </item>
      <item>
+      <widget class="QCheckBox" name="check_checksum_box">
+       <property name="text">
+        <string>Compare checksums</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QTableWidget" name="selected_data_table">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
@@ -265,6 +275,7 @@ QTabWidget#info_tabs
      <property name="font">
       <font>
        <pointsize>16</pointsize>
+       <weight>50</weight>
        <italic>false</italic>
        <bold>false</bold>
        <kerning>true</kerning>

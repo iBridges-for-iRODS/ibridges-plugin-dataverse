@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 # pylint: skip-file
 # ruff: noqa: N999, E501, N801, D101, N802, D102, N803, N802, D102, N803
-
 ################################################################################
 ## Form generated from reading UI file 'tabDataverse.ui'
 ##
@@ -17,16 +16,16 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QAbstractItemView, QApplication, QComboBox, QHBoxLayout,
-    QHeaderView, QLabel, QLineEdit, QPushButton,
-    QSizePolicy, QSpacerItem, QTableWidget, QTableWidgetItem,
-    QTreeView, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QAbstractItemView, QApplication, QCheckBox, QComboBox,
+    QHBoxLayout, QHeaderView, QLabel, QLineEdit,
+    QPushButton, QSizePolicy, QSpacerItem, QTableWidget,
+    QTableWidgetItem, QTreeView, QVBoxLayout, QWidget)
 
 class Ui_Form(object):
     def setupUi(self, Form):
         if not Form.objectName():
             Form.setObjectName(u"Form")
-        Form.resize(886, 464)
+        Form.resize(886, 408)
         Form.setStyleSheet(u"QWidget\n"
 "{\n"
 "    background-color: rgb(211,211,211);\n"
@@ -139,6 +138,12 @@ class Ui_Form(object):
 
         self.verticalLayout_3.addItem(self.verticalSpacer)
 
+        self.check_checksum_box = QCheckBox(Form)
+        self.check_checksum_box.setObjectName(u"check_checksum_box")
+        self.check_checksum_box.setChecked(True)
+
+        self.verticalLayout_3.addWidget(self.check_checksum_box)
+
         self.selected_data_table = QTableWidget(Form)
         if (self.selected_data_table.columnCount() < 2):
             self.selected_data_table.setColumnCount(2)
@@ -234,6 +239,7 @@ class Ui_Form(object):
         self.dv_create_ds_button.setToolTip(QCoreApplication.translate("Form", u"\"Create new dataset.\"", None))
 #endif // QT_CONFIG(tooltip)
         self.dv_create_ds_button.setText(QCoreApplication.translate("Form", u"Create New Dataset", None))
+        self.check_checksum_box.setText(QCoreApplication.translate("Form", u"Compare checksums", None))
         ___qtablewidgetitem = self.selected_data_table.horizontalHeaderItem(0)
         ___qtablewidgetitem.setText(QCoreApplication.translate("Form", u"Path", None));
         ___qtablewidgetitem1 = self.selected_data_table.horizontalHeaderItem(1)
