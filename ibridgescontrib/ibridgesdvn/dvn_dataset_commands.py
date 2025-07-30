@@ -12,7 +12,7 @@ from ibridges.cli.util import parse_remote
 from ibridgescontrib.ibridgesdvn.dataverse import Dataverse
 from ibridgescontrib.ibridgesdvn.dvn_config import DVNConf
 from ibridgescontrib.ibridgesdvn.dvn_operations import DvnOperations
-from ibridgescontrib.ibridgesdvn.utils import create_unique_filename
+from ibridgescontrib.ibridgesdvn.utils import calculate_sha1_checksum, create_unique_filename
 
 
 class CliDvnCreateDataset(BaseCliCommand):
@@ -279,6 +279,23 @@ class CliDvnPush(BaseCliCommand):
             help="The name/id of the dataset to send to dataverse.",
             type=str,
         )
+        group = parser.add_mutually_exclusive_group()
+        group.add_argument(
+            '--check-checksum',
+            dest='check_checksum',
+            action='store_true',
+            help=(
+                "Calculate the checksum for the data downloaded from iRODS and compare it "
+                "with the checksum in Dataverse. To omit use --no-check-checksum."
+            ),
+        )
+        group.add_argument(
+            '--no-check-checksum',
+            dest='check_checksum',
+            action='store_false',
+            help='Disable checksum checking.'
+        )
+        parser.set_defaults(check_checksum=True)
         return parser
 
     @staticmethod
@@ -310,10 +327,20 @@ class CliDvnPush(BaseCliCommand):
                     print(f"Downloaded {irods_path} --> {local_path}")
                     dvn_api.add_datafile_to_dataset(args.dataset_id, local_path)
                     print(f"Uploaded {local_path} --> {args.dataset_id}")
+                    if args.check_checksum:
+                        sha1 = calculate_sha1_checksum(local_path)
+                        dvn_sha1 = dvn_api.get_checksum_by_filename(
+                            args.dataset_id, local_path.name
+                        )
+                        if sha1 != dvn_sha1:
+                            warnings.warn(
+                                "DATAVERSE ERROR: Local file and file in dataset are not the same."
+                            )
                     ops.rm_file(cur_url, args.dataset_id, str(irods_path))
                     local_path.unlink()
                 except Exception as err:  # pylint: disable=W0718
                     warnings.warn(f"Error in download and upload: {repr(err)}.")
+                    raise err
 
             else:
                 warnings.warn(f"{irods_path} does nor exist or is collection. Skip.")

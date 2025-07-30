@@ -292,3 +292,26 @@ class Dataverse:
 
         if response.status_code not in range(200, 300):
             raise HTTPError(f"{response.status_code}, {response.reason_phrase}")
+
+    def get_checksum_by_filename(self, dataset_id: str, target_label: str):
+        """Retrieve the checksum of a specific file by its label.
+
+        Parameters
+        ----------
+        dataset_id:
+            The ID of the dataset.
+        target_label:
+            The name of the file in the dataset.
+
+        Returns
+        -------
+        str or None: The checksum value if found, else None.
+
+        """
+        data_dict = self.get_dataset_info(dataset_id)
+        files = data_dict['data']['latestVersion']['files']
+        for file in files:
+            if file.get('label') == target_label:
+                return file['dataFile']['checksum']['value']
+
+        return None
