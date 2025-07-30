@@ -281,19 +281,19 @@ class CliDvnPush(BaseCliCommand):
         )
         group = parser.add_mutually_exclusive_group()
         group.add_argument(
-            '--check-checksum',
-            dest='check_checksum',
-            action='store_true',
+            "--check-checksum",
+            dest="check_checksum",
+            action="store_true",
             help=(
                 "Calculate the checksum for the data downloaded from iRODS and compare it "
                 "with the checksum in Dataverse. To omit use --no-check-checksum."
             ),
         )
         group.add_argument(
-            '--no-check-checksum',
-            dest='check_checksum',
-            action='store_false',
-            help='Disable checksum checking.'
+            "--no-check-checksum",
+            dest="check_checksum",
+            action="store_false",
+            help="Disable checksum checking.",
         )
         parser.set_defaults(check_checksum=True)
         return parser

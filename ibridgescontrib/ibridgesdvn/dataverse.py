@@ -309,9 +309,9 @@ class Dataverse:
 
         """
         data_dict = self.get_dataset_info(dataset_id)
-        files = data_dict['data']['latestVersion']['files']
+        files = data_dict["data"]["latestVersion"]["files"]
         for file in files:
-            if file.get('label') == target_label:
-                return file['dataFile']['checksum']['value']
+            if file.get("label") == target_label:
+                return file["dataFile"]["checksum"]["value"]
 
         return None

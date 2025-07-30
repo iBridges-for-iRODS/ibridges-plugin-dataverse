@@ -18,6 +18,7 @@ def create_unique_filename(local_dir: Path, filename: str):
 
     return local_path
 
+
 def calculate_sha1_checksum(file_path):
     """Calculate the SHA-1 checksum of a file.
 
@@ -33,8 +34,8 @@ def calculate_sha1_checksum(file_path):
     """
     sha1 = hashlib.sha1()
     try:
-        with open(file_path, 'rb') as f:
-            for chunk in iter(lambda: f.read(8192), b''):
+        with open(file_path, "rb") as f:
+            for chunk in iter(lambda: f.read(8192), b""):
                 sha1.update(chunk)
         return sha1.hexdigest()
     except FileNotFoundError:
