@@ -15,7 +15,7 @@ from ibridgescontrib.ibridgesdvn.dvn_config import DVNConf
 from ibridgescontrib.ibridgesdvn.dvn_operations import DvnOperations
 from ibridgescontrib.ibridgesdvn.gui_popup_widgets import CreateDataset, CreateDvnURL
 from ibridgescontrib.ibridgesdvn.uiDataverse import Ui_Form
-from ibridgescontrib.ibridgesdvn.utils import create_unique_filename
+from ibridgescontrib.ibridgesdvn.utils import create_unique_filename, calculate_sha1_checksum
 
 # pylint: disable=R0902
 
@@ -142,7 +142,7 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
         temp_dir = Path.home() / ".dvn" / "data"
         temp_dir.mkdir(exist_ok=True)
         self.logger.info("DATAVERSE: Download data from iRODS to  %s", str(temp_dir))
-
+        print(self.check_checksum_box)
         for row in range(self.selected_data_table.rowCount()):
             irods_path = IrodsPath(self.session, self.selected_data_table.item(row, 0).text())
             if irods_path.dataobject_exists():
@@ -154,6 +154,21 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
                     )
                     self.dvn_api.add_datafile_to_dataset(dataset_id, local_path)
                     self.logger.info("DATAVERSE: Upload %s --> %s", str(local_path), dataset_id)
+                    # check checksums
+                    if self.check_checksum_box.isChecked():
+                        sha1 = calculate_sha1_checksum(local_path)
+                        dvn_sha1 = self.dvn_api.get_checksum_by_filename(
+                            dataset_id, local_path.name
+                            )
+                        if sha1 != dvn_sha1:
+                            self.logger.error("DATAVERSE: transfer  %s --> %s failed, checksum error",
+                                              str(local_path), dataset_id)
+                            self.error_label.setText("Checksum checks failed, consult the logs.")
+                        else:
+                            self.logger.info("DATAVERSE: transfer  %s --> %s checksum ok",
+                                str(local_path), dataset_id)
+                    else:
+                        self.error_label.setText("Checksum comparisons are disabled. Please check manually.")
                     self.dvn_ops.rm_file(self.url, dataset_id, str(irods_path))
                     local_path.unlink()
                 except Exception as err:  # pylint: disable=W0718
