@@ -179,6 +179,7 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
                             "Checksum comparisons are disabled. Please check manually."
                         )
                     self.dvn_ops.rm_file(self.url, dataset_id, str(irods_path))
+                    self.dvn_ops.clean_up_datasets()
                     local_path.unlink()
                 except Exception as err:  # pylint: disable=W0718
                     self.logger.error("DATAVERSE: Error in download and upload: %s", repr(err))

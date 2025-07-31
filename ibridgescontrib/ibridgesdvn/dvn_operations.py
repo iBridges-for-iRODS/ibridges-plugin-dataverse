@@ -135,3 +135,11 @@ class DvnOperations:
         Path(self.ops_log_path).parent.mkdir(exist_ok=True, parents=True)
         with open(self.ops_log_path, "w", encoding="utf-8") as handle:
             json.dump(self.ops, handle, indent=4)
+
+    def clean_up_datasets(self):
+        """Remove all datasets entries with an empty irods_paths list."""
+        for url in self.ops:
+            dv_entry = self.ops[url]["add_file"]
+            cleaned_entry = [entry for entry in dv_entry if entry['irods_paths']]
+            self.ops[url]["add_file"] = cleaned_entry
+        self.save()

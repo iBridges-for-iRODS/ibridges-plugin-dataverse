@@ -260,8 +260,23 @@ class CliDvnStatus(BaseCliCommand):
 
     @staticmethod
     def run_shell(session, parser, args):
-        """Run init is not available for shell."""
+        """Print all stored dvn operations."""
         ops = DvnOperations()
+        ops.show()
+
+
+class CliDvnCleanUp(BaseCliCommand):
+    """Clean up dvn operations where the list of irods paths is empty."""
+
+    names = ["dv-cleanup"]
+    description = "Cleanup all entries from the status, where the list of irods files is empty."
+    examples = [""]
+
+    @staticmethod
+    def run_shell(session, parser, args):
+        """Remove all unnecessary dvn operation entries."""
+        ops = DvnOperations()
+        ops.clean_up_datasets()
         ops.show()
 
 
