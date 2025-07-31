@@ -56,6 +56,7 @@ dv-rm-file = "ibridgescontrib.ibridgesdvn:RM_FILE_COMMANDS"
 dv-add-file = "ibridgescontrib.ibridgesdvn:ADD_FILE_COMMANDS"
 dv-meta-ds = "ibridgescontrib.ibridgesdvn:META_DS_COMMANDS"
 dv-create-ds = "ibridgescontrib.ibridgesdvn:CREATE_DS_COMMANDS"
+dv-cleanup = "ibridgescontrib.ibridgesdvn:CLEANUP_COMMANDS"
 
 [project.entry-points."ibridges.gui_tab"]
 dv = "ibridgescontrib.ibridgesdvn.gui_dataverse:DataverseTab"
