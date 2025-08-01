@@ -11,10 +11,11 @@ from ibridges.cli.base import BaseCliCommand
 from ibridges.cli.util import parse_remote
 
 from ibridgescontrib.ibridgesdvn.dataverse import Dataverse
+from ibridgescontrib.ibridgesdvn.ds_meta import build_metadata, gather_metadata_inputs
 from ibridgescontrib.ibridgesdvn.dvn_config import DVNConf
 from ibridgescontrib.ibridgesdvn.dvn_operations import DvnOperations
 from ibridgescontrib.ibridgesdvn.utils import calculate_sha1_checksum, create_unique_filename
-from ibridgescontrib.ibridgesdvn.ds_meta import gather_metadata_inputs, build_metadata
+
 
 class CliDvnCreateDataset(BaseCliCommand):
     """Subcommand to initialize ibridges."""
@@ -30,7 +31,7 @@ class CliDvnCreateDataset(BaseCliCommand):
             help="Identifier for the Dataverse where the new dataset will be created.",
             type=str,
         )
-        
+
         group = parser.add_mutually_exclusive_group(required=True)
         group.add_argument(
             "--metajson",

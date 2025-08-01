@@ -140,6 +140,6 @@ class DvnOperations:
         """Remove all datasets entries with an empty irods_paths list."""
         for url in self.ops:
             dv_entry = self.ops[url]["add_file"]
-            cleaned_entry = [entry for entry in dv_entry if entry['irods_paths']]
+            cleaned_entry = [entry for entry in dv_entry if entry["irods_paths"]]
             self.ops[url]["add_file"] = cleaned_entry
         self.save()

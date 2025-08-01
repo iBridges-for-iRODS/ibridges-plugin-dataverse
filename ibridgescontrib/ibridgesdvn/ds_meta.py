@@ -1,4 +1,5 @@
 """Fetch information and build Dataverse dataset metadata."""
+
 import json
 import re
 
@@ -16,7 +17,7 @@ DATAVERSE_SUBJECTS = [
     "Medicine, Health and Life Sciences",
     "Physics",
     "Social Sciences",
-    "Other"
+    "Other",
 ]
 
 
@@ -41,22 +42,24 @@ def collect_authors():
                 break
             print("  ❌ Invalid format. Use 'Last, First'.")
         affiliation = get_non_empty_input("  Author affiliation: ")
-        authors.append({
-            "authorName": {
-                "value": name,
-                "typeClass": "primitive",
-                "multiple": False,
-                "typeName": "authorName"
-            },
-            "authorAffiliation": {
-                "value": affiliation,
-                "typeClass": "primitive",
-                "multiple": False,
-                "typeName": "authorAffiliation"
+        authors.append(
+            {
+                "authorName": {
+                    "value": name,
+                    "typeClass": "primitive",
+                    "multiple": False,
+                    "typeName": "authorName",
+                },
+                "authorAffiliation": {
+                    "value": affiliation,
+                    "typeClass": "primitive",
+                    "multiple": False,
+                    "typeName": "authorAffiliation",
+                },
             }
-        })
+        )
         more = input("  Add another author? (y/n): ").strip().lower()
-        if more != 'y':
+        if more != "y":
             break
     return authors
 
@@ -80,22 +83,24 @@ def collect_contacts():
                 break
             print("  ❌ Invalid email format. Try again.")
 
-        contacts.append({
-            "datasetContactName": {
-                "value": name,
-                "typeClass": "primitive",
-                "multiple": False,
-                "typeName": "datasetContactName"
-            },
-            "datasetContactEmail": {
-                "value": email,
-                "typeClass": "primitive",
-                "multiple": False,
-                "typeName": "datasetContactEmail"
+        contacts.append(
+            {
+                "datasetContactName": {
+                    "value": name,
+                    "typeClass": "primitive",
+                    "multiple": False,
+                    "typeName": "datasetContactName",
+                },
+                "datasetContactEmail": {
+                    "value": email,
+                    "typeClass": "primitive",
+                    "multiple": False,
+                    "typeName": "datasetContactEmail",
+                },
             }
-        })
+        )
         more = input("  Add another contact? (y/n): ").strip().lower()
-        if more != 'y':
+        if more != "y":
             break
     return contacts
 
@@ -106,16 +111,18 @@ def collect_descriptions():
     while True:
         print("\nEnter dataset description:")
         desc = get_non_empty_input("  Description: ")
-        descriptions.append({
-            "dsDescriptionValue": {
-                "value": desc,
-                "multiple": False,
-                "typeClass": "primitive",
-                "typeName": "dsDescriptionValue"
+        descriptions.append(
+            {
+                "dsDescriptionValue": {
+                    "value": desc,
+                    "multiple": False,
+                    "typeClass": "primitive",
+                    "typeName": "dsDescriptionValue",
+                }
             }
-        })
+        )
         more = input("  Add another description? (y/n): ").strip().lower()
-        if more != 'y':
+        if more != "y":
             break
     return descriptions
 
@@ -131,7 +138,7 @@ def collect_subjects():
             for s in DATAVERSE_SUBJECTS:
                 print(f"    - {s}")
             continue
-        elif subject in DATAVERSE_SUBJECTS:
+        if subject in DATAVERSE_SUBJECTS:
             if subject not in subjects:
                 subjects.append(subject)
             else:
@@ -139,7 +146,7 @@ def collect_subjects():
         else:
             print("  ❌ Invalid subject. Type '?' to see the list of valid subjects.")
         more = input("  Add another subject? (y/n): ").strip().lower()
-        if more != 'y':
+        if more != "y":
             break
     return subjects
 
@@ -153,19 +160,21 @@ def gather_metadata_inputs():
         "authors": collect_authors(),
         "contacts": collect_contacts(),
         "descriptions": collect_descriptions(),
-        "subjects": collect_subjects()
+        "subjects": collect_subjects(),
     }
     return inputs
+
 
 # General functions
 def is_valid_email(email):
     """Check if email is valid using regex."""
-    pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
+    pattern = r"^[\w\.-]+@[\w\.-]+\.\w+$"
     return re.match(pattern, email)
+
 
 def is_valid_name(name):
     """Check if name is in 'Last, First' format."""
-    parts = [p.strip() for p in name.split(',')]
+    parts = [p.strip() for p in name.split(",")]
     return len(parts) == 2 and all(parts)
 
 
@@ -181,33 +190,33 @@ def build_metadata(inputs):
                             "typeName": "title",
                             "typeClass": "primitive",
                             "multiple": False,
-                            "value": inputs["title"]
+                            "value": inputs["title"],
                         },
                         {
                             "typeName": "author",
                             "typeClass": "compound",
                             "multiple": True,
-                            "value": inputs["authors"]
+                            "value": inputs["authors"],
                         },
                         {
                             "typeName": "datasetContact",
                             "typeClass": "compound",
                             "multiple": True,
-                            "value": inputs["contacts"]
+                            "value": inputs["contacts"],
                         },
                         {
                             "typeName": "dsDescription",
                             "typeClass": "compound",
                             "multiple": True,
-                            "value": inputs["descriptions"]
+                            "value": inputs["descriptions"],
                         },
                         {
                             "typeName": "subject",
                             "typeClass": "controlledVocabulary",
                             "multiple": True,
-                            "value": inputs["subjects"]
-                        }
-                    ]
+                            "value": inputs["subjects"],
+                        },
+                    ],
                 }
             }
         }

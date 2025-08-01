@@ -10,8 +10,6 @@ from pyDataverse.exceptions import ApiAuthorizationError
 from pyDataverse.models import Datafile, Dataset
 from pyDataverse.utils import read_file
 
-from ibridgescontrib.ibridgesdvn.json_templates import DATASET_JSON
-
 
 class Dataverse:
     """A utility class to interact with a Dataverse instance using the provided URL and API token.
@@ -177,11 +175,7 @@ class Dataverse:
 
         return response
 
-    def create_dataset(
-        self,
-        dataverse: str,
-        metadata: str
-    ):  # pylint: disable=R0913, R0917
+    def create_dataset(self, dataverse: str, metadata: str):  # pylint: disable=R0913, R0917
         """Create a new dataset in a specified Dataverse repository.
 
         Parameters
@@ -209,7 +203,7 @@ class Dataverse:
             raise ValueError("Provide a dictionary conatining the metadata..")
 
         ds = Dataset()
-        #ds.set(metadata)
+        # ds.set(metadata)
         ds.from_json(metadata)
         if not ds.validate_json():
             raise ValueError("Something is wrong with the dataset's metadata.")
