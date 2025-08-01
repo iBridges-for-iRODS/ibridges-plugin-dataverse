@@ -180,12 +180,7 @@ class Dataverse:
     def create_dataset(
         self,
         dataverse: str,
-        title: str,
-        subject: str = None,
-        authors: list[dict] = None,
-        contacts: list[dict] = None,
-        description: list[dict] = None,
-        verbose: bool = True,
+        metadata: str
     ):  # pylint: disable=R0913, R0917
         """Create a new dataset in a specified Dataverse repository.
 
@@ -193,29 +188,8 @@ class Dataverse:
         ----------
         dataverse:
             The name of the Dataverse Collection where the dataset will be created.
-        title:
-            The title of the dataset.
-        subject:
-            The subject area or field of the dataset.
-        authors:
-            A list of dictionaries containing author details.
-            [{'authorName': 'LastAuthor1, FirstAuthor1',
-                'authorAffiliation': 'AuthorAffiliation1'},
-             {'authorName': 'LastAuthor2, FirstAuthor2',
-                'authorAffiliation': 'AuthorAffiliation2'}]
-        contacts:
-            A list of contacts.
-            [{'datasetContactEmail': 'ContactEmail1@mailinator.com',
-              'datasetContactName': 'LastContact1, FirstContact1'},
-             {'datasetContactEmail': 'ContactEmail2@mailinator.com',
-              'datasetContactName': 'LastContact2, FirstContact2'}
-              ]
-        description:
-            A list of descriptions providing information about the dataset.
-            [{'dsDescriptionValue': 'DescriptionText'},
-             {'dsDescriptionValue': 'DescriptionText2'}]
-        verbose:
-            If True, prints dataset details for debugging. Defaults to True.
+        metadata:
+            A minimal metadata json string.
 
         Raises
         ------
@@ -231,25 +205,12 @@ class Dataverse:
         """
         if dataverse is None:
             raise ValueError("Dataverse name must not be empty.")
-        if title is None:
-            raise ValueError("Title must not be empty.")
+        if metadata is None:
+            raise ValueError("Provide a dictionary conatining the metadata..")
 
         ds = Dataset()
-        ds.from_json(DATASET_JSON)
-        ds.set({"title": title})
-        if subject:
-            ds.set({"subject": subject})
-        if authors:
-            ds.set({"author": authors})
-        if contacts:
-            ds.set({"datasetContact": contacts})
-        if description:
-            ds.set({"dsDescription": description})
-
-        if verbose:
-            print("Dataset metadata ok:", ds.validate_json())
-            print(ds.get())
-
+        #ds.set(metadata)
+        ds.from_json(metadata)
         if not ds.validate_json():
             raise ValueError("Something is wrong with the dataset's metadata.")
 
@@ -257,6 +218,8 @@ class Dataverse:
 
         if response.status_code not in range(200, 300):
             raise HTTPError(f"{response.status_code}, {response.reason_phrase}")
+
+        return response
 
     def add_datafile_to_dataset(self, dataset_id: str, file_path: Path, verbose: bool = True):
         """Upload a data file to a specific dataset.
