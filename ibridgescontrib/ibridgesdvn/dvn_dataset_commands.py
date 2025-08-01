@@ -4,12 +4,14 @@ import ast
 import shutil
 import warnings
 from pathlib import Path
+from pprint import pprint
 
 from ibridges import IrodsPath, download
 from ibridges.cli.base import BaseCliCommand
 from ibridges.cli.util import parse_remote
 
 from ibridgescontrib.ibridgesdvn.dataverse import Dataverse
+from ibridgescontrib.ibridgesdvn.ds_meta import build_metadata, gather_metadata_inputs
 from ibridgescontrib.ibridgesdvn.dvn_config import DVNConf
 from ibridgescontrib.ibridgesdvn.dvn_operations import DvnOperations
 from ibridgescontrib.ibridgesdvn.utils import calculate_sha1_checksum, create_unique_filename
@@ -30,20 +32,17 @@ class CliDvnCreateDataset(BaseCliCommand):
             type=str,
         )
 
-        parser.add_argument(
+        group = parser.add_mutually_exclusive_group(required=True)
+        group.add_argument(
             "--metajson",
             help="Metadata JSON file, e.g., like dataset.json from pyDataverse's user guide.",
             type=Path,
-            nargs="?",
-            default=None,
         )
 
-        parser.add_argument(
+        group.add_argument(
             "--metadata",
-            help="A string defining the minimal metadata for a dataset separated by ';'.",
-            type=str,
-            nargs="?",
-            default=None,
+            help="Fetching the minimal metadata interactively and adding it to the dataset.",
+            action="store_true",
         )
         return parser
 
@@ -66,62 +65,12 @@ class CliDvnCreateDataset(BaseCliCommand):
         if args.metajson:
             dvn_api.create_dataset_with_json(args.dataverse_id, args.metajson)
 
-        if args.metadata:
-            meta_items = args.metadata.split(";")
-            title = CliDvnCreateDataset._remove_prefix("title", meta_items)
-            if len(title) != 1:
-                parser.error(f"Please provide title: 'title:my_title', found {title}")
-            title = title[0]
-            subject = CliDvnCreateDataset._remove_prefix("subject", meta_items)
-            if len(subject) > 1:
-                parser.error(f"Please provide subject: 'subject:my_subject', found {subject}")
-            elif len(subject) == 1:
-                subject = subject[0]
-            else:
-                subject = None
-            authors = CliDvnCreateDataset._remove_prefix("authors", meta_items)
-            if len(authors) > 1:
-                p = (
-                    "[{'authorName': 'LastAuthor1, FirstAuthor1', "
-                    "'authorAffiliation': 'AuthorAffiliation1'}, "
-                    "{'authorName': 'LastAuthor2, FirstAuthor2', "
-                    "'authorAffiliation': 'AuthorAffiliation1'}, "
-                    "]"
-                )
-                parser.error(f"Please provide authors: 'authors:{p}'.")
-            elif len(authors) == 1:
-                authors = authors[0]
-            else:
-                authors = None
-            contacts = CliDvnCreateDataset._remove_prefix("contacts", meta_items)
-            if len(contacts) > 1:
-                p = (
-                    "[{'datasetContactEmail': 'ContactEmail1@mailinator.com', "
-                    "'datasetContactName': 'LastContact1, FirstContact1'},"
-                    "{'datasetContactEmail': 'ContactEmail2@mailinator.com', "
-                    "'datasetContactName': 'LastContact2, FirstContact2'}]"
-                )
-                parser.error(f"Please provide authors: 'contacts:{p}'.")
-            else:
-                contacts = None
-            description = CliDvnCreateDataset._remove_prefix("description", meta_items)
-            if len(description) > 1:
-                p = (
-                    "description:[{'dsDescriptionValue': 'DescriptionText'},'"
-                    "'dsDescriptionValue': 'DescriptionText2'}]"
-                )
-                parser.error(f"Please provide authors: 'descriptions:{p}'.")
-            else:
-                description = None
-            dvn_api.create_dataset(
-                args.dataverse_id,
-                title,
-                subject,
-                CliDvnCreateDataset._cast(authors),
-                CliDvnCreateDataset._cast(contacts),
-                CliDvnCreateDataset._cast(description),
-                verbose=True,
-            )
+        elif args.metadata:
+            # Fetch info from user
+            inputs = gather_metadata_inputs()
+            metadata = build_metadata(inputs)
+            pprint(metadata)
+            dvn_api.create_dataset(args.dataverse_id, metadata)
 
     @classmethod
     def _cast(cls, my_list):
@@ -157,7 +106,7 @@ class CliDvnAddDatasetMeta(BaseCliCommand):
     @staticmethod
     def run_shell(session, parser, args):
         """Run init is not available for shell."""
-        print(args)
+        print("Not implemented", args)
 
 
 class CliDvnAddFile(BaseCliCommand):

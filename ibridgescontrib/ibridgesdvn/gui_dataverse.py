@@ -114,7 +114,8 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
         url_widget = CreateDataset(self.dvn_api, self.dv_ds_edit)
         url_widget.exec()
         doi = self.dv_ds_edit.text()
-        self.logger.info("DATAVERSE: Created Dataset %s", doi)
+        if doi != "":
+            self.logger.info("DATAVERSE: Created Dataset %s", doi)
 
     def dv_rm_file(self):
         """Remove a file from the table of selected files."""
