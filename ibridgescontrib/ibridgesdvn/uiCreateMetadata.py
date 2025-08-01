@@ -60,13 +60,8 @@ class Ui_Dialog(object):
 "}\n"
 "\n"
 "")
-        self.horizontalLayout_6 = QHBoxLayout(Dialog)
-        self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
-        self.error_label = QLabel(Dialog)
-        self.error_label.setObjectName(u"error_label")
-
-        self.horizontalLayout_6.addWidget(self.error_label)
-
+        self.verticalLayout_7 = QVBoxLayout(Dialog)
+        self.verticalLayout_7.setObjectName(u"verticalLayout_7")
         self.horizontalLayout_4 = QHBoxLayout()
         self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
         self.verticalLayout_5 = QVBoxLayout()
@@ -220,7 +215,12 @@ class Ui_Dialog(object):
         self.horizontalLayout_4.addLayout(self.verticalLayout_6)
 
 
-        self.horizontalLayout_6.addLayout(self.horizontalLayout_4)
+        self.verticalLayout_7.addLayout(self.horizontalLayout_4)
+
+        self.error_label = QLabel(Dialog)
+        self.error_label.setObjectName(u"error_label")
+
+        self.verticalLayout_7.addWidget(self.error_label)
 
 
         self.retranslateUi(Dialog)
@@ -230,7 +230,6 @@ class Ui_Dialog(object):
 
     def retranslateUi(self, Dialog):
         Dialog.setWindowTitle(QCoreApplication.translate("Dialog", u"Dialog", None))
-        self.error_label.setText("")
         self.label.setText(QCoreApplication.translate("Dialog", u"Author (Last, First)", None))
         self.label_2.setText(QCoreApplication.translate("Dialog", u"Affiliation", None))
         self.author_button.setText(QCoreApplication.translate("Dialog", u">>", None))
@@ -243,5 +242,6 @@ class Ui_Dialog(object):
         self.subject_button.setText(QCoreApplication.translate("Dialog", u">>", None))
         self.ok_button.setText(QCoreApplication.translate("Dialog", u"OK", None))
         self.cancel_button.setText(QCoreApplication.translate("Dialog", u"Cancel", None))
+        self.error_label.setText("")
     # retranslateUi
 
