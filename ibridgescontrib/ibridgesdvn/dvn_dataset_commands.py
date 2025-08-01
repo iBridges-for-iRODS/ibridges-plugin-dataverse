@@ -106,7 +106,7 @@ class CliDvnAddDatasetMeta(BaseCliCommand):
     @staticmethod
     def run_shell(session, parser, args):
         """Run init is not available for shell."""
-        print(args)
+        print("Not implemented", args)
 
 
 class CliDvnAddFile(BaseCliCommand):
