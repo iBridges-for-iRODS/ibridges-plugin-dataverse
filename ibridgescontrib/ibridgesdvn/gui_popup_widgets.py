@@ -7,7 +7,8 @@ from PySide6.QtWidgets import QFileDialog
 
 from ibridgescontrib.ibridgesdvn.uiCreateDataset import Ui_Dialog as ui_create_dataset
 from ibridgescontrib.ibridgesdvn.uiCreateUrl import Ui_Dialog as ui_create_url
-
+from ibridgescontrib.ibridgesdvn.uiCreateMetadata import Ui_Dialog as ui_create_metadata
+from ibridgescontrib.ibridgesdvn.ds_meta import DATAVERSE_SUBJECTS
 
 class CreateDataset(PySide6.QtWidgets.QDialog, ui_create_dataset):
     """Popup window to create a new dataset."""
@@ -22,6 +23,7 @@ class CreateDataset(PySide6.QtWidgets.QDialog, ui_create_dataset):
         self.ok_button.clicked.connect(self.create)
         self.cancel_button.clicked.connect(self.close)
         self.load_json_button.clicked.connect(self.select_meta_file)
+        self.create_json_button.clicked.connect(self.create_meta)
         self.return_label = return_label
 
     def close(self):
@@ -32,10 +34,10 @@ class CreateDataset(PySide6.QtWidgets.QDialog, ui_create_dataset):
         """Create new Dataverse configuration."""
         dv = self.dv_edit.text()
         if dv == "":
-            self.error_label.text("Please provide a Dataverse collection.")
+            self.error_label.setText("Please provide a Dataverse collection.")
             return
         if self.json_file_label.text() == "":
-            self.error_label.setText("Please choose a metadata json file.")
+            self.error_label.setText("Please choose a metadata json file or create metadata.")
             return
         if not self.dvn_api.dataverse_exists(dv):
             self.error_label.setText(f"Could not find {dv}.")
@@ -58,6 +60,66 @@ class CreateDataset(PySide6.QtWidgets.QDialog, ui_create_dataset):
 
         self.json_file_label.setText(str(select_file))
 
+    def create_meta(self):
+        """Open pop up to fetch minimal metadata."""
+        meta_widget = CreateMetadata(self.meta_browser)
+        meta_widget.exec()
+
+
+class CreateMetadata(PySide6.QtWidgets.QDialog, ui_create_metadata):
+    """Popup window to fetch dataset metadata."""
+
+    def __init__(self, metadata_field):
+        """Init window."""
+        super().__init__()
+        super().setupUi(self)
+        self.setWindowTitle("Create Metadata for Dataset.")
+        self.setWindowFlags(PySide6.QtCore.Qt.WindowType.WindowStaysOnTopHint)
+        self.metadata_field = metadata_field
+
+        self.ok_button.clicked.connect(self.submit)
+        self.cancel_button.clicked.connect(self.close)
+
+        #populate subjects
+        self.subject_box.addItems([s for s in DATAVERSE_SUBJECTS])
+
+        self.author_button.clicked.connect(self.parse_author)
+        self.contact_button.clicked.connect(self.parse_contact)
+        self.subject_button.clicked.connect(self.parse_subject)
+
+    def close(self):
+        """Close widget."""
+        self.done(0)
+
+    def submit(self):
+        """Submit info to parent."""
+        text = self.json_edit.toPlainText()
+        self.metadata_field.setText(text)
+
+    def parse_subject(self):
+        """Parse, title, subject and description."""
+        title = self.title_edit.text()
+        subject = self.subject_box.currentText()
+        description = self.description_edit.text()
+        print(title, subject, description)
+        self.title_edit.clear()
+        self.description_edit.clear()
+    
+    def parse_contact(self):
+        """Parse contact."""
+        contactname = self.contact_name_edit.text()
+        conatctmail = self.contact_email_edit.text()
+        print(contactname, conatctmail)
+        self.contact_name_edit.clear()
+        self.contact_mail_edit.clear()
+
+    def parse_author(self):
+        """Parse author."""
+        authorname = self.author_edit.text()
+        authoraff = self.affiliation_edit.text()
+        print(authorname, authoraff)
+        self.author_edit.clear()
+        self.affiliation_edit.clear()
 
 class CreateDvnURL(PySide6.QtWidgets.QDialog, ui_create_url):
     """Popup window to create a new URL entry."""
