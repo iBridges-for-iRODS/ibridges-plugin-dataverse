@@ -63,6 +63,8 @@ class CreateDataset(PySide6.QtWidgets.QDialog, ui_create_dataset):
             doi = response.json()["data"]["persistentId"].split(":")[1]
             self.return_label.setText(doi)
             self.done(0)
+        else:
+            self.error_label.setText("Please provide some dataset metadata.")
 
     def select_meta_file(self):
         """Open file selector."""
@@ -74,10 +76,13 @@ class CreateDataset(PySide6.QtWidgets.QDialog, ui_create_dataset):
         )
 
         self.json_file_label.setText(str(select_file))
-        self.meta_browser.setText(read_file(str(select_file)))
+        if self.json_file_label.text() != "":
+            self.meta_browser.setText(read_file(str(select_file)))
 
     def create_meta(self):
         """Open pop up to fetch minimal metadata."""
+        self.json_file_label.clear()
+        self.meta_browser.clear()
         meta_widget = CreateMetadata(self.meta_browser)
         meta_widget.exec()
 
