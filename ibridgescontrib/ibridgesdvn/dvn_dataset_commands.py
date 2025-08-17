@@ -52,8 +52,10 @@ class CliDvnCreateDataset(BaseCliCommand):
         # pylint: disable=R0912
         dvn_conf = DVNConf(parser)
         cur_url = dvn_conf.cur_dvn
-        cur_token = dvn_conf.get_entry(cur_url)[1]["token"]
-
+        try:
+            cur_token = dvn_conf.get_entry(cur_url)[1]["token"]
+        except KeyError as err:
+            raise KeyError(f"Please provide a token for {cur_url} through dvn-init.") from err
         dvn_api = Dataverse(cur_url, cur_token)
 
         if args.metajson and not args.metajson.is_file():
