@@ -86,29 +86,6 @@ class CliDvnCreateDataset(BaseCliCommand):
         return [s.removeprefix(prefix + ":").strip() for s in items if s.startswith(prefix)]
 
 
-class CliDvnAddDatasetMeta(BaseCliCommand):
-    """Add extra metadata to a dataset."""
-
-    names = ["dv-meta-ds"]
-    description = "Add or overwrite metadata of a dataset."
-    examples = ["dataset_name"]
-
-    @classmethod
-    def _mod_parser(cls, parser):
-        parser.add_argument(
-            "dataset",
-            help="The name/id of the new dataset.",
-            type=str,
-            default=None,
-        )
-        return parser
-
-    @staticmethod
-    def run_shell(session, parser, args):
-        """Run init is not available for shell."""
-        print("Not implemented", args)
-
-
 class CliDvnAddFile(BaseCliCommand):
     """Subcommand to add (a) file(s) to a dataset."""
 
