@@ -22,7 +22,7 @@ class CliDvnCreateDataset(BaseCliCommand):
 
     names = ["dv-create-ds"]
     description = "Create a new dataset in a Dataverse collection."
-    examples = ["dataverse_id --metajson file_path", 'dataverse_id --metadata "title:my_title;.."']
+    examples = ["dataverse_id --metajson file_path", "dataverse_id --metadata"]
 
     @classmethod
     def _mod_parser(cls, parser):
@@ -130,6 +130,10 @@ class CliDvnAddFile(BaseCliCommand):
                 continue
             if irods_path.collection_exists():
                 warnings.warn(f"{irods_path} is not a data object, skip!")
+                continue
+            if irods_path.size > 9 * 10**9:
+                warnings.warn(
+                        f"{irods_path} too large, size {irods_path.size} > {9 * 10**9}, skip!")
                 continue
 
             ops.add_file(cur_url, args.dataset, str(irods_path))
