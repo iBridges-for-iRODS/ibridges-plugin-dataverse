@@ -17,6 +17,10 @@ All packages are installable with pip.
 - Mark files for upload as you browse and push to Dataverse later --> Git-like workflow
 - GUI and CLI receive the same information, so you can switch between them without loosing information
 
+## :warning: NOTE
+
+- The plugin only transfers files which are smaller than 9GB!
+
 ## Install the plugin
 
 ```
