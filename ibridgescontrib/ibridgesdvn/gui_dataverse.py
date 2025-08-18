@@ -144,7 +144,6 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
         temp_dir = Path.home() / ".dvn" / "data"
         temp_dir.mkdir(exist_ok=True)
         self.logger.info("DATAVERSE: Download data from iRODS to  %s", str(temp_dir))
-        print(self.check_checksum_box)
         for row in range(self.selected_data_table.rowCount()):
             irods_path = IrodsPath(self.session, self.selected_data_table.item(row, 0).text())
             if irods_path.dataobject_exists():
@@ -199,7 +198,11 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
         for idx in irods_selection:
             irods_path = self.irods_model.irods_path_from_tree_index(idx)
             if irods_path.dataobject_exists():
-                self.dvn_ops.add_file(self.url, self.dv_ds_edit.text(), str(irods_path))
+                if irods_path.size > 9 * 10**9:
+                    self.error_label.setText(
+                            f"{irods_path} too large: size {irods_path.size} > {9 * 10**9}")
+                else:
+                    self.dvn_ops.add_file(self.url, self.dv_ds_edit.text(), str(irods_path))
             else:
                 print("Not a data object")
                 self.error_label.setText("Please only select data objects.")
