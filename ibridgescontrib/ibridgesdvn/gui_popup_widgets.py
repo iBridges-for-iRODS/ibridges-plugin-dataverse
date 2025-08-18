@@ -60,9 +60,12 @@ class CreateDataset(PySide6.QtWidgets.QDialog, ui_create_dataset):
             self.done(0)
         elif self.meta_browser.toPlainText() != "":
             response = self.dvn_api.create_dataset(dv, self.meta_browser.toPlainText())
-            doi = response.json()["data"]["persistentId"].split(":")[1]
-            self.return_label.setText(doi)
-            self.done(0)
+            try:
+                doi = response.json()["data"]["persistentId"].split(":")[1]
+                self.return_label.setText(doi)
+                self.done(0)
+            except KeyError as err:
+                self.error_label.setText(f"ERROR: Could not create Dataset. {str(response)}")
         else:
             self.error_label.setText("Please provide some dataset metadata.")
 
