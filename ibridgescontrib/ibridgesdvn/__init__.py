@@ -1,7 +1,6 @@
 """Create links to python classes."""
 
 from ibridgescontrib.ibridgesdvn.dvn_dataset_commands import (
-    CliDvnAddDatasetMeta,
     CliDvnAddFile,
     CliDvnCleanUp,
     CliDvnCreateDataset,
@@ -21,7 +20,6 @@ STATUS_COMMANDS = [CliDvnStatus]
 CLEANUP_COMMANDS = [CliDvnCleanUp]
 RM_FILE_COMMANDS = [CliDvnRmFile]
 ADD_FILE_COMMANDS = [CliDvnAddFile]
-META_DS_COMMANDS = [CliDvnAddDatasetMeta]
 CREATE_DS_COMMANDS = [CliDvnCreateDataset]
 
 

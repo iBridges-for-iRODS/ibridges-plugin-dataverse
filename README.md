@@ -1,17 +1,27 @@
 # iBridges Dataverse
 
-This package provides a plugin to iBridges CLI. The plugin allows to create a dataset on Dataverse and to uplaod iRODS data objects.
+This package provides a plugin to the iBridges CLI and GUI. The plugin allows to create a dataset on Dataverse and to uplaod iRODS data objects.
 
 ## Dependencies
 
 - Python 3.9 or higher
 - HTTPX
 - PyDataverse
-- iBridges
+- iBridges and iBridges GUI (ibridges, ibridgesgui)
 
 All packages are installable with pip. 
 
-## Install plugin
+## Highlights
+
+- Checksum checks upon upload to Dataverse
+- Mark files for upload as you browse and push to Dataverse later --> Git-like workflow
+- GUI and CLI receive the same information, so you can switch between them without loosing information
+
+## :warning: NOTE
+
+- The plugin only transfers files which are smaller than 9GB!
+
+## Install the plugin
 
 ```
 pip install git+https://github.com/iBridges-for-iRODS/ibridges-plugin-dataverse.git
@@ -25,14 +35,13 @@ ibridges -h
 
     dv-add-file         Mark one or more iRODS data objects to be uploaded to a Dataverse dataset.
     dv-setup            Print existing Dataverse configurations or create new ones.
+    dv-cleanup          Cleanup all entries from the status, where the list of irods files is empty.
     dv-create-ds        Create a new dataset in a Dataverse collection.
     dv-init             Provide token and store for future use
-    dv-meta-ds          Add or overwrite metadata of a dataset.
     dv-push             Push all local changes to the dataverse collection.
     dv-rm-file          Remove one or more iRODS data objects from upload to a Dataverse dataset.
     dv-status           List all local changes to the dataset(s).
-    dv-switch           Switch to another existing Dataverse configuration by providing a url or
-                        alias.
+    dv-switch           Switch to another existing Dataverse configuration by providing a url or alias.
 ```
 
 If you use the iBridges GUI you will be able to select a "Dataverse" view.
@@ -59,7 +68,7 @@ When you are happy with the list, click "Upload to Dataverse". Now go to your Da
 
 ### Configuring a Dataverse instance
 
-With the command `ibridges dv-setup` you can see all existing Dataverse URLs and you create an alias for a Dataverse URL.
+With the command `ibridges dv-setup` you can see all existing Dataverse URLs and you can create an alias for a Dataverse URL.
 
 ```
 ibridges dv-setup dvnl-demo https://demo.dataverse.nl
@@ -100,11 +109,18 @@ Dataset with pid 'doi:10.80227/PDVNL/RZQRAK' created.
 This creates a dataset on the Dataverse we selected with `dv-init` or `dv-switch`, it uses the Dataverse collection `UUscience`. Please adjust to your Dataverse instance. 
 You will need the `10.80227/PDVNL/RZQRAK` part of the pid to add files and to finally upload them to Dataverse, so please save it somewhere.
 
+Alternatively, you can create some minimal metadata with the command:
+
+```
+ibshell:research-christine> dv-create-ds UUscience --metadata
+```
+This will open a small interactive questionnaire for the most basic metadata that Dtaaverse needs to create a Dataset.
+
 ### Browsing files and adding it to Dataverse
 
 After you created the new Dataset on Dataverse, you can now use the iBridges shell to browse and add files as you go along.
 
-We implemented a git-like workflow. So the following command will only mark files to be uploaded to Dataverse.
+We implemented a git-like workflow. So the following command will only mark files to be uploaded to a specific Dataset on Dataverse.
 
 
 Browse through collections in iRODS
