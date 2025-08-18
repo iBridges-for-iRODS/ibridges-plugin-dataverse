@@ -158,7 +158,7 @@ class CliDvnAddFile(BaseCliCommand):
                 warnings.warn(
                         f"{irods_path} too large, size {irods_path.size} > {9 * 10**9}, skip!")
                 continue
-            
+
             ops.add_file(cur_url, args.dataset, str(irods_path))
 
         ops.show()

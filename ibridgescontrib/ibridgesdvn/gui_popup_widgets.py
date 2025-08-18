@@ -4,8 +4,8 @@ import json
 from pathlib import Path
 
 import PySide6.QtCore
-from pyDataverse.utils import read_file
 from pyDataverse.exceptions import ApiAuthorizationError
+from pyDataverse.utils import read_file
 from PySide6.QtWidgets import QFileDialog
 
 from ibridgescontrib.ibridgesdvn.ds_meta import (
@@ -61,7 +61,7 @@ class CreateDataset(PySide6.QtWidgets.QDialog, ui_create_dataset):
                     doi = response.json()["data"]["persistentId"].split(":")[1]
                     self.return_label.setText(doi)
                     self.done(0)
-                except KeyError as err:
+                except KeyError:
                     self.error_label.setText(f"ERROR: Could not create Dataset. {str(response)}")
             except ApiAuthorizationError as err:
                 self.error_label.setText(f"ERROR: Could not create Dataset. {repr(err)}")
@@ -72,7 +72,7 @@ class CreateDataset(PySide6.QtWidgets.QDialog, ui_create_dataset):
                     doi = response.json()["data"]["persistentId"].split(":")[1]
                     self.return_label.setText(doi)
                     self.done(0)
-                except KeyError as err:
+                except KeyError:
                     self.error_label.setText(f"ERROR: Could not create Dataset. {str(response)}")
             except ApiAuthorizationError as err:
                 self.error_label.setText(f"ERROR: Could not create Dataset. {repr(err)}")
