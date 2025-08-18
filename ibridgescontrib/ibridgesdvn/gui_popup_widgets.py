@@ -5,6 +5,7 @@ from pathlib import Path
 
 import PySide6.QtCore
 from pyDataverse.utils import read_file
+from pyDataverse.exceptions import ApiAuthorizationError
 from PySide6.QtWidgets import QFileDialog
 
 from ibridgescontrib.ibridgesdvn.ds_meta import (
@@ -54,18 +55,27 @@ class CreateDataset(PySide6.QtWidgets.QDialog, ui_create_dataset):
 
         if self.json_file_label.text() != "":
             meta_json = self.json_file_label.text()
-            response = self.dvn_api.create_dataset_with_json(dv, meta_json)
-            doi = response.json()["data"]["persistentId"].split(":")[1]
-            self.return_label.setText(doi)
-            self.done(0)
-        elif self.meta_browser.toPlainText() != "":
-            response = self.dvn_api.create_dataset(dv, self.meta_browser.toPlainText())
             try:
-                doi = response.json()["data"]["persistentId"].split(":")[1]
-                self.return_label.setText(doi)
-                self.done(0)
-            except KeyError as err:
-                self.error_label.setText(f"ERROR: Could not create Dataset. {str(response)}")
+                response = self.dvn_api.create_dataset_with_json(dv, meta_json)
+                try:
+                    doi = response.json()["data"]["persistentId"].split(":")[1]
+                    self.return_label.setText(doi)
+                    self.done(0)
+                except KeyError as err:
+                    self.error_label.setText(f"ERROR: Could not create Dataset. {str(response)}")
+            except ApiAuthorizationError as err:
+                self.error_label.setText(f"ERROR: Could not create Dataset. {repr(err)}")
+        elif self.meta_browser.toPlainText() != "":
+            try:
+                response = self.dvn_api.create_dataset(dv, self.meta_browser.toPlainText())
+                try:
+                    doi = response.json()["data"]["persistentId"].split(":")[1]
+                    self.return_label.setText(doi)
+                    self.done(0)
+                except KeyError as err:
+                    self.error_label.setText(f"ERROR: Could not create Dataset. {str(response)}")
+            except ApiAuthorizationError as err:
+                self.error_label.setText(f"ERROR: Could not create Dataset. {repr(err)}")
         else:
             self.error_label.setText("Please provide some dataset metadata.")
 
