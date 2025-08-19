@@ -11,7 +11,6 @@ from ibridgescontrib.ibridgesdvn.dvn_dataset_commands import (
 from ibridgescontrib.ibridgesdvn.dvn_init import CliDvnInit, CliDvnSwitch
 from ibridgescontrib.ibridgesdvn.dvn_setup import CliDvnAlias
 from ibridgescontrib.ibridgesdvn.gui_dataverse import DataverseTab
-from ibridgescontrib.ibridgesdvn.gui_thread import TransferDataThread
 
 SETUP_COMMANDS = [CliDvnAlias]
 INIT_COMMANDS = [CliDvnInit]

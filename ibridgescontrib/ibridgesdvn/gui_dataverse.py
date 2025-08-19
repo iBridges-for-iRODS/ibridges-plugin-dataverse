@@ -5,9 +5,9 @@ import shutil
 from pathlib import Path
 
 import PySide6.QtWidgets
-from ibridges import IrodsPath, download
-from ibridgesgui.config import get_last_ienv_path
+from ibridges import IrodsPath
 from ibridges.session import Session
+from ibridgesgui.config import get_last_ienv_path
 from ibridgesgui.gui_utils import populate_table
 from ibridgesgui.irods_tree_model import IrodsTreeModel
 
@@ -15,9 +15,8 @@ from ibridgescontrib.ibridgesdvn.dataverse import Dataverse
 from ibridgescontrib.ibridgesdvn.dvn_config import DVNConf
 from ibridgescontrib.ibridgesdvn.dvn_operations import DvnOperations
 from ibridgescontrib.ibridgesdvn.gui_popup_widgets import CreateDataset, CreateDvnURL
-from ibridgescontrib.ibridgesdvn.uiDataverse import Ui_Form
-from ibridgescontrib.ibridgesdvn.utils import calculate_sha1_checksum, create_unique_filename
 from ibridgescontrib.ibridgesdvn.gui_thread import TransferDataThread
+from ibridgescontrib.ibridgesdvn.uiDataverse import Ui_Form
 
 # pylint: disable=R0902
 
@@ -33,10 +32,10 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
         super().setupUi(self)
         self.logger = logger
         self.logger.info("Init third party tab: %s", self.name)
-        
+
         self.session = session
         self.app_name = app_name
-        
+
         self.dvn_conf = DVNConf(None)
         self.dvn_api = None
         self.dvn_ops = DvnOperations()
@@ -161,7 +160,7 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
             self.logger.error("DATAVERSE: Could not instantiate a new session from %s: %s",
                               get_last_ienv_path(), repr(err))
             return
-        
+
         self.transfer_thread.current_progress.connect(self._transfer_status)
         self.transfer_thread.result.connect(self._transfer_end)
         self.transfer_thread.finished.connect(self._finish_transfer_data)
@@ -169,12 +168,14 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
         self.progress_bar.setValue(0)
         self.progress_bar.setMaximum(self.selected_data_table.rowCount())
         self.transfer_thread.start()
-        
+
     def _enable_buttons(self, enable: bool):
         self.add_selected_button.setEnabled(enable)
         self.check_checksum_box.setEnabled(enable)
         self.delete_selected_button.setEnabled(enable)
         self.dv_ds_edit.setEnabled(enable)
+        self.dv_create_ds_button.setEnabled(enable)
+        self.dv_push_button.setEnabled(enable)
         self.selected_data_table.setEnabled(enable)
         self.dv_url_select_box.setEnabled(enable)
         self.add_url_button.setEnabled(enable)
