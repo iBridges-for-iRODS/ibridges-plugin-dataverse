@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>886</width>
-    <height>408</height>
+    <height>464</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -268,6 +268,20 @@ QTabWidget#info_tabs
        </item>
       </layout>
      </item>
+     <item>
+      <widget class="QLabel" name="status_label">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QProgressBar" name="progress_bar">
+       <property name="value">
+        <number>0</number>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
    <item>
@@ -275,7 +289,6 @@ QTabWidget#info_tabs
      <property name="font">
       <font>
        <pointsize>16</pointsize>
-       <weight>50</weight>
        <italic>false</italic>
        <bold>false</bold>
        <kerning>true</kerning>

@@ -237,7 +237,7 @@ class Dataverse:
             None: The function uploads the file and does not return any value.
 
         """
-        data_metadata = {"pid": "doi:dataset_id", "filename": file_path.name}
+        data_metadata = {"pid": f"doi:{dataset_id}", "filename": file_path.name}
 
         df = Datafile()
         df.set(data_metadata)
