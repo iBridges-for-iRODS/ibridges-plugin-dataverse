@@ -16,6 +16,7 @@ class TransferDataThread(PySide6.QtCore.QThread):
     result = PySide6.QtCore.Signal(dict)
     current_progress = PySide6.QtCore.Signal(list)
 
+    # pylint: disable=too-many-positional-arguments
     def __init__(
         self,
         ienv_path: Path,
