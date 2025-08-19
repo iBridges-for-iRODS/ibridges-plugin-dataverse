@@ -6,6 +6,7 @@ from pathlib import Path
 
 import PySide6.QtWidgets
 from ibridges import IrodsPath, download
+from ibridgesgui.config import get_last_ienv_path
 from ibridges.session import Session
 from ibridgesgui.gui_utils import populate_table
 from ibridgesgui.irods_tree_model import IrodsTreeModel
@@ -16,6 +17,7 @@ from ibridgescontrib.ibridgesdvn.dvn_operations import DvnOperations
 from ibridgescontrib.ibridgesdvn.gui_popup_widgets import CreateDataset, CreateDvnURL
 from ibridgescontrib.ibridgesdvn.uiDataverse import Ui_Form
 from ibridgescontrib.ibridgesdvn.utils import calculate_sha1_checksum, create_unique_filename
+from ibridgescontrib.ibridgesdvn.gui_thread import TransferDataThread
 
 # pylint: disable=R0902
 
@@ -31,13 +33,17 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
         super().setupUi(self)
         self.logger = logger
         self.logger.info("Init third party tab: %s", self.name)
+        
         self.session = session
         self.app_name = app_name
+        
         self.dvn_conf = DVNConf(None)
         self.dvn_api = None
         self.dvn_ops = DvnOperations()
         self.url = None
         self.irods_model = None
+        self.transfer_thread = None
+        self.temp_dir = Path.home() / ".dvn" / "data"
         self.init_tab()
 
     def init_tab(self):
@@ -141,51 +147,65 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
             self.error_label.setText("Please add some data from the iRODS tree.")
             return
 
-        temp_dir = Path.home() / ".dvn" / "data"
-        temp_dir.mkdir(exist_ok=True)
-        self.logger.info("DATAVERSE: Download data from iRODS to  %s", str(temp_dir))
-        for row in range(self.selected_data_table.rowCount()):
-            irods_path = IrodsPath(self.session, self.selected_data_table.item(row, 0).text())
-            if irods_path.dataobject_exists():
-                try:
-                    local_path = create_unique_filename(temp_dir, irods_path.name)
-                    download(self.session, irods_path, local_path, overwrite=True)
-                    self.logger.info(
-                        "DATAVERSE: Download %s --> %s", str(irods_path), str(local_path)
-                    )
-                    self.dvn_api.add_datafile_to_dataset(dataset_id, local_path)
-                    self.logger.info("DATAVERSE: Upload %s --> %s", str(local_path), dataset_id)
-                    # check checksums
-                    if self.check_checksum_box.isChecked():
-                        sha1 = calculate_sha1_checksum(local_path)
-                        dvn_sha1 = self.dvn_api.get_checksum_by_filename(
-                            dataset_id, local_path.name
-                        )
-                        if sha1 != dvn_sha1:
-                            self.logger.error(
-                                "DATAVERSE: transfer  %s --> %s failed, checksum error",
-                                str(local_path),
-                                dataset_id,
-                            )
-                            self.error_label.setText("Checksum checks failed, consult the logs.")
-                        else:
-                            self.logger.info(
-                                "DATAVERSE: transfer  %s --> %s checksum ok",
-                                str(local_path),
-                                dataset_id,
-                            )
-                    else:
-                        self.error_label.setText(
-                            "Checksum comparisons are disabled. Please check manually."
-                        )
-                    self.dvn_ops.rm_file(self.url, dataset_id, str(irods_path))
-                    self.dvn_ops.clean_up_datasets()
-                    local_path.unlink()
-                except Exception as err:  # pylint: disable=W0718
-                    self.logger.error("DATAVERSE: Error in download and upload: %s", repr(err))
-                    self.error_label.setText("Something went wrong, please check the logs.")
+        self.temp_dir.mkdir(exist_ok=True)
+        _, entry = self.dvn_conf.get_entry(self.url)
+
+        try:
+            self.transfer_thread = TransferDataThread(
+                Path(get_last_ienv_path()), self.logger, self.dvn_ops, self.url, entry["token"],
+                self.temp_dir, dataset_id, self.check_checksum_box.isChecked()
+            )
+        except Exception as err:
+            self.error_label.setText(
+                    f"Could not instantiate a new session from{get_last_ienv_path()}: {repr(err)}")
+            self.logger.error("DATAVERSE: Could not instantiate a new session from %s: %s",
+                              get_last_ienv_path(), repr(err))
+            return
+        
+        self.transfer_thread.current_progress.connect(self._transfer_status)
+        self.transfer_thread.result.connect(self._transfer_end)
+        self.transfer_thread.finished.connect(self._finish_transfer_data)
+        self._enable_buttons(False)
+        self.progress_bar.setValue(0)
+        self.progress_bar.setMaximum(self.selected_data_table.rowCount())
+        self.transfer_thread.start()
+        
+    def _enable_buttons(self, enable: bool):
+        self.add_selected_button.setEnabled(enable)
+        self.check_checksum_box.setEnabled(enable)
+        self.delete_selected_button.setEnabled(enable)
+        self.dv_ds_edit.setEnabled(enable)
+        self.selected_data_table.setEnabled(enable)
+        self.dv_url_select_box.setEnabled(enable)
+        self.add_url_button.setEnabled(enable)
+        self.delete_url_button.setEnabled(enable)
+        self.irods_tree_view.setEnabled(enable)
+
+    def _transfer_status(self, state: list):
+        obj_count, num_objs, obj_failed = state
+        self.progress_bar.setValue(obj_count)
+        text = f"{obj_count} of {num_objs} files; failed: {obj_failed}."
+        self.status_label.setText(text)
+
+    def _transfer_end(self, thread_output: dict):
+        if thread_output["error"] != "":
+            self.error_label.setText(thread_output["error"])
+            self.populate_selected_data_table()
+            shutil.rmtree(self.temp_dir)
+            return
+
+        shutil.rmtree(self.temp_dir)
         self.populate_selected_data_table()
-        shutil.rmtree(temp_dir)
+        self.status_label.clear()
+        self.error_label.setText(
+                "Transfer finished, visit Dataverse and finish your publication.")
+        self._enable_buttons(True)
+
+    def _finish_transfer_data(self):
+        self._enable_buttons(True)
+        self.setCursor(PySide6.QtGui.QCursor(PySide6.QtCore.Qt.CursorShape.ArrowCursor))
+        if self.transfer_thread:
+            del self.transfer_thread
 
     def dv_add_file(self):
         """Add file from irods tree to table with selected files."""
@@ -207,8 +227,9 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
                 print("Not a data object")
                 self.error_label.setText("Please only select data objects.")
         self.populate_selected_data_table()
+        self.irods_tree_view.clearSelection()
 
-    def irods_root(self):
+    def _irods_root(self):
         """Retrieve lowest visible level in the iRODS tree for the user."""
         lowest = IrodsPath(self.session).absolute()
         while lowest.parent.exists() and str(lowest) != "/":
@@ -216,7 +237,7 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
         return lowest
 
     def _init_irods_tree(self):
-        root = self.irods_root()
+        root = self._irods_root()
         self.irods_model = IrodsTreeModel(self.irods_tree_view, root)
         self.irods_tree_view.setModel(self.irods_model)
         # self.irods_tree_view.headerItem().setText(0, "")
@@ -245,7 +266,5 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
                     for path in self.dvn_ops.get_paths(self.url, dataset_id)
                 ]
                 populate_table(self.selected_data_table, len(current_paths), current_paths)
-            else:
-                self.error_label.setText("No data files stored for dataset.")
         else:
             self.error_label.setText("Enter a valid Dataset Idenitifier.")

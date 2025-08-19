@@ -18,14 +18,15 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QAbstractItemView, QApplication, QCheckBox, QComboBox,
     QHBoxLayout, QHeaderView, QLabel, QLineEdit,
-    QPushButton, QSizePolicy, QSpacerItem, QTableWidget,
-    QTableWidgetItem, QTreeView, QVBoxLayout, QWidget)
+    QProgressBar, QPushButton, QSizePolicy, QSpacerItem,
+    QTableWidget, QTableWidgetItem, QTreeView, QVBoxLayout,
+    QWidget)
 
 class Ui_Form(object):
     def setupUi(self, Form):
         if not Form.objectName():
             Form.setObjectName(u"Form")
-        Form.resize(886, 408)
+        Form.resize(886, 464)
         Form.setStyleSheet(u"QWidget\n"
 "{\n"
 "    background-color: rgb(211,211,211);\n"
@@ -182,6 +183,17 @@ class Ui_Form(object):
 
         self.verticalLayout_3.addLayout(self.horizontalLayout_3)
 
+        self.status_label = QLabel(Form)
+        self.status_label.setObjectName(u"status_label")
+
+        self.verticalLayout_3.addWidget(self.status_label)
+
+        self.progress_bar = QProgressBar(Form)
+        self.progress_bar.setObjectName(u"progress_bar")
+        self.progress_bar.setValue(0)
+
+        self.verticalLayout_3.addWidget(self.progress_bar)
+
 
         self.horizontalLayout.addLayout(self.verticalLayout_3)
 
@@ -252,6 +264,7 @@ class Ui_Form(object):
         self.dv_push_button.setToolTip(QCoreApplication.translate("Form", u"\"Upload to Dataverse dataset.\"", None))
 #endif // QT_CONFIG(tooltip)
         self.dv_push_button.setText(QCoreApplication.translate("Form", u"Upload to Dataverse", None))
+        self.status_label.setText("")
 #if QT_CONFIG(tooltip)
         self.add_selected_button.setToolTip(QCoreApplication.translate("Form", u"\"Mark file(s) for upload to Dataverse.\"", None))
 #endif // QT_CONFIG(tooltip)
