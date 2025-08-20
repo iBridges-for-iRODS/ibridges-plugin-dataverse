@@ -23,6 +23,12 @@
     font: 16pt
 }
 
+QProgressBar::chunk
+{
+  background-color: rgb(21, 165, 137);
+  width: 5px;
+}
+
 QLabel#error_label
 {
     color: rgb(220, 130, 30);
