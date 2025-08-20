@@ -6,7 +6,6 @@ from pathlib import Path
 
 import PySide6.QtWidgets
 from ibridges import IrodsPath
-from ibridges.path import CachedIrodsPath
 from ibridges.session import Session
 from ibridgesgui.config import get_last_ienv_path
 from ibridgesgui.gui_utils import populate_table
@@ -131,7 +130,7 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
         for row in rows:
             path = self.selected_data_table.item(row, 0).text()
             self.dvn_ops.rm_file(self.url, dataset_id, path)
-        self.populate_selected_data_table()
+        self._populate_selected_data_table()
 
     def dv_push(self):
         """Download all objects in the table and upload to Dataverse dataset."""
@@ -193,12 +192,12 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
     def _transfer_end(self, thread_output: dict):
         if thread_output["error"] != "":
             self.error_label.setText(thread_output["error"])
-            self.populate_selected_data_table()
+            self._populate_selected_data_table()
             shutil.rmtree(self.temp_dir)
             return
 
         shutil.rmtree(self.temp_dir)
-        self.populate_selected_data_table()
+        self._populate_selected_data_table()
         self.status_label.clear()
         self.error_label.setText(
                 "Transfer finished, visit Dataverse and finish your publication.")
@@ -231,7 +230,7 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
             else:
                 print("Not a data object")
                 self.error_label.setText("Please only select data objects.")
-        self.populate_selected_data_table()
+        self._populate_selected_data_table()
         self.irods_tree_view.clearSelection()
         self.setCursor(PySide6.QtGui.QCursor(PySide6.QtCore.Qt.CursorShape.ArrowCursor))
 
@@ -260,10 +259,11 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
         self.irods_tree_view.setColumnHidden(5, True)
 
     def dataset_edit_action(self):
+        """Load table upon dataset identifier."""
         self.error_label.clear()
-        self.populate_selected_data_table()
+        self._populate_selected_data_table()
 
-    def populate_selected_data_table(self):
+    def _populate_selected_data_table(self):
         """Load irods path and size into table."""
         self.add_selected_button.setEnabled(True)
         self.selected_data_table.setRowCount(0)
