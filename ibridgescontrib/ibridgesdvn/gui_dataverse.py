@@ -6,7 +6,6 @@ from pathlib import Path
 
 import PySide6.QtWidgets
 from ibridges import IrodsPath
-from ibridges.path import CachedIrodsPath
 from ibridges.session import Session
 from ibridgesgui.config import get_last_ienv_path
 from ibridgesgui.gui_utils import populate_table
