@@ -22,7 +22,7 @@ All packages are installable with pip.
 - The plugin only transfers files which are smaller than 9GB!
 - All data from iRODS will be donwloaded to your local computer.
 
-  The files will be downloaded one by one to a temporary folder. From there they are uploaded to Dataverse and are finally deleted from your computer. So you need at least 9GB of extra space. In case of errors in the upload to Dataverse, the file will **not** be deleted from them temprary folder so that files might accumulate on your computer.
+  The files will be downloaded one by one to a temporary folder. From there they are uploaded to Dataverse and are finally deleted from your computer. So you need at least 9GB of extra space. In case of errors in the upload to Dataverse, the file will **not** be deleted from them temporary folder so that files might accumulate on your computer.
  
 ## Install the plugin
 
