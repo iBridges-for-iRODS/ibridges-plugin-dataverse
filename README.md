@@ -20,6 +20,7 @@ All packages are installable with pip.
 ## :warning: NOTE
 
 - The plugin only transfers files which are smaller than 9GB!
+- All data from iRODS will be donwloaded to your local computer. 
 
 ## Install the plugin
 
