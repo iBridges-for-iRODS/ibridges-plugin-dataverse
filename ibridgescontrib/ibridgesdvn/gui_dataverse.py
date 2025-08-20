@@ -54,7 +54,7 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
         self.add_url_button.clicked.connect(self.add_dv_url)
         self.delete_url_button.clicked.connect(self.delete_dv_url)
         # self.dv_ds_edit --> get dataset id
-        self.dv_ds_edit.textChanged.connect(self.populate_selected_data_table)
+        self.dv_ds_edit.textChanged.connect(self.dataset_edit_action)
         self.dv_create_ds_button.clicked.connect(self.dv_create_ds)
         # self.selected_data_table --> populate
         self.delete_selected_button.clicked.connect(self.dv_rm_file)
@@ -130,7 +130,7 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
         for row in rows:
             path = self.selected_data_table.item(row, 0).text()
             self.dvn_ops.rm_file(self.url, dataset_id, path)
-        self.populate_selected_data_table()
+        self._populate_selected_data_table()
 
     def dv_push(self):
         """Download all objects in the table and upload to Dataverse dataset."""
@@ -164,6 +164,7 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
         self.transfer_thread.current_progress.connect(self._transfer_status)
         self.transfer_thread.result.connect(self._transfer_end)
         self.transfer_thread.finished.connect(self._finish_transfer_data)
+        self.setCursor(PySide6.QtGui.QCursor(PySide6.QtCore.Qt.CursorShape.WaitCursor))
         self._enable_buttons(False)
         self.progress_bar.setValue(0)
         self.progress_bar.setMaximum(self.selected_data_table.rowCount())
@@ -191,12 +192,12 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
     def _transfer_end(self, thread_output: dict):
         if thread_output["error"] != "":
             self.error_label.setText(thread_output["error"])
-            self.populate_selected_data_table()
+            self._populate_selected_data_table()
             shutil.rmtree(self.temp_dir)
             return
 
         shutil.rmtree(self.temp_dir)
-        self.populate_selected_data_table()
+        self._populate_selected_data_table()
         self.status_label.clear()
         self.error_label.setText(
                 "Transfer finished, visit Dataverse and finish your publication.")
@@ -216,6 +217,8 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
         if len(irods_selection) == 0:
             self.error_label.setText("Please select a data object.")
             return
+
+        self.setCursor(PySide6.QtGui.QCursor(PySide6.QtCore.Qt.CursorShape.WaitCursor))
         for idx in irods_selection:
             irods_path = self.irods_model.irods_path_from_tree_index(idx)
             if irods_path.dataobject_exists():
@@ -227,8 +230,9 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
             else:
                 print("Not a data object")
                 self.error_label.setText("Please only select data objects.")
-        self.populate_selected_data_table()
+        self._populate_selected_data_table()
         self.irods_tree_view.clearSelection()
+        self.setCursor(PySide6.QtGui.QCursor(PySide6.QtCore.Qt.CursorShape.ArrowCursor))
 
     def _irods_root(self):
         """Retrieve lowest visible level in the iRODS tree for the user."""
@@ -254,7 +258,12 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
         self.irods_tree_view.setColumnHidden(4, True)
         self.irods_tree_view.setColumnHidden(5, True)
 
-    def populate_selected_data_table(self):
+    def dataset_edit_action(self):
+        """Load table upon dataset identifier."""
+        self.error_label.clear()
+        self._populate_selected_data_table()
+
+    def _populate_selected_data_table(self):
         """Load irods path and size into table."""
         self.add_selected_button.setEnabled(True)
         self.selected_data_table.setRowCount(0)

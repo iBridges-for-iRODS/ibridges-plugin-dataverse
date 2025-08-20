@@ -11,7 +11,7 @@ This package provides a plugin to the iBridges CLI and GUI. The plugin allows to
 
 All packages are installable with pip. 
 
-## Highlights
+## 💡 Highlights
 
 - Checksum checks upon upload to Dataverse
 - Mark files for upload as you browse and push to Dataverse later --> Git-like workflow
@@ -20,8 +20,10 @@ All packages are installable with pip.
 ## :warning: NOTE
 
 - The plugin only transfers files which are smaller than 9GB!
-- All data from iRODS will be donwloaded to your local computer. 
+- All data from iRODS will be donwloaded to your local computer.
 
+  The files will be downloaded one by one to a temporary folder. From there they are uploaded to Dataverse and are finally deleted from your computer. So you need at least 9GB of extra space. In case of errors in the upload to Dataverse, the file will **not** be deleted from them temporary folder so that files might accumulate on your computer.
+ 
 ## Install the plugin
 
 ```
