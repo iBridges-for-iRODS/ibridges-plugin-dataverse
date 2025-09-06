@@ -78,6 +78,7 @@ class DvnOperations:
 
     def add_file(self, dataverse_url: str, dataset_id: str, irods_path: str):
         """Add file to list."""
+        print(dataset_id)
         if dataverse_url in self.ops:
             dv_entry = self.ops[dataverse_url]["add_file"]
             if dataset_id in self._get_dataset_ids(dataverse_url):

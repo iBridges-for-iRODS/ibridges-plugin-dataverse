@@ -270,7 +270,7 @@ class CliDvnPush(BaseCliCommand):
             if irods_path.dataobject_exists():
                 try:
                     local_path = create_unique_filename(temp_dir, irods_path.name)
-                    download(session, irods_path, local_path, overwrite=True)
+                    download(irods_path, local_path, overwrite=True)
                     print(f"Downloaded {irods_path} --> {local_path}")
                     dvn_api.add_datafile_to_dataset(args.dataset_id, local_path)
                     print(f"Uploaded {local_path} --> {args.dataset_id}")

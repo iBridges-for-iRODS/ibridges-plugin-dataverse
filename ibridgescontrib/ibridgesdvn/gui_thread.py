@@ -74,7 +74,7 @@ class TransferDataThread(PySide6.QtCore.QThread):
             if irods_path.dataobject_exists():
                 try:
                     local_path = create_unique_filename(self.tempdir, irods_path.name)
-                    download(self.thread_session, irods_path, local_path, overwrite=True)
+                    download(irods_path, local_path, overwrite=True)
                     self.logger.info(
                         "DATAVERSE: Download %s --> %s", str(irods_path), str(local_path)
                     )
