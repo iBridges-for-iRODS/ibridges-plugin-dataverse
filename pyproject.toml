@@ -24,8 +24,8 @@ classifiers = [
 ]
 
 dependencies = [
-    "ibridges>=1.5.1, <1.6",
-    "ibridgesgui>=1.5.1, <1.6",
+    "ibridges>=2.0.0, <2.1",
+    "ibridgesgui>=2.0.0, <2.1",
     "pyDataverse",
     "httpx"
 ]
