@@ -25,7 +25,6 @@ classifiers = [
 
 dependencies = [
     "ibridges>=1.5.1, <1.6",
-    "ibridgesgui>=1.5.1, <1.6",
     "pyDataverse",
     "httpx"
 ]
@@ -37,6 +36,9 @@ GitHub = "https://github.com/iBridges-for-iRODS/iBridges"
 documentation = "https://github.com/iBridges-for-iRODS/iBridges"
 
 [project.optional-dependencies]
+gui = [
+    "ibridgesgui>=1.5.1, <1.6"
+]
 test = [
     "pylint",
     "pytest",
@@ -58,7 +60,7 @@ dv-create-ds = "ibridgescontrib.ibridgesdvn:CREATE_DS_COMMANDS"
 dv-cleanup = "ibridgescontrib.ibridgesdvn:CLEANUP_COMMANDS"
 
 [project.entry-points."ibridges.gui_tab"]
-dv = "ibridgescontrib.ibridgesdvn.gui_dataverse:DataverseTab"
+dv = "ibridgescontrib.ibridgesdvn.gui.gui_dataverse:DataverseTab"
 
 [tool.setuptools]
 packages = ["ibridgescontrib"]
