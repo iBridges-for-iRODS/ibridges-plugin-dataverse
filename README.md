@@ -31,7 +31,8 @@ Install the CLI:
 ```
 pip install git+https://github.com/iBridges-for-iRODS/ibridges-plugin-dataverse.git
 ```
-INstall the GUI and CLI:
+
+Install the GUI and CLI:
 
 ```
 pip install git+https://github.com/iBridges-for-iRODS/ibridges-plugin-dataverse.git
