@@ -23,10 +23,13 @@ CREATE_DS_COMMANDS = [CliDvnCreateDataset]
 
 __all__ = ["get_dataverse_tab"]
 
+# pylint: disable=import-outside-toplevel
 def get_dataverse_tab():
     """Import for GUI."""
     try:
-        from ibridgescontrib.ibridgesdvn.gui.gui_dataverse import DataverseTab # pylint: disable=import-outside-toplevel
+        from ibridgescontrib.ibridgesdvn.gui.gui_dataverse import (
+            DataverseTab,
+        )
     except ImportError as e:
         raise ImportError(
             "GUI dependencies missing. Install with:\n"
