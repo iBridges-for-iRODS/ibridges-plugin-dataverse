@@ -10,7 +10,6 @@ from ibridgescontrib.ibridgesdvn.dvn_dataset_commands import (
 )
 from ibridgescontrib.ibridgesdvn.dvn_init import CliDvnInit, CliDvnSwitch
 from ibridgescontrib.ibridgesdvn.dvn_setup import CliDvnAlias
-from ibridgescontrib.ibridgesdvn.gui.gui_dataverse import DataverseTab
 
 SETUP_COMMANDS = [CliDvnAlias]
 INIT_COMMANDS = [CliDvnInit]
@@ -22,5 +21,14 @@ RM_FILE_COMMANDS = [CliDvnRmFile]
 ADD_FILE_COMMANDS = [CliDvnAddFile]
 CREATE_DS_COMMANDS = [CliDvnCreateDataset]
 
+__all__ = ["get_dataverse_tab"]
 
-__all__ = ["DataverseTab"]
+def get_dataverse_tab():
+    try:
+        from ibridgescontrib.ibridgesdvn.gui.gui_dataverse import DataverseTab
+    except ImportError as e:
+        raise ImportError(
+            "GUI dependencies missing. Install with:\n"
+            "  pip install ibridgescontrib[gui]"
+        ) from e
+    return DataverseTab
