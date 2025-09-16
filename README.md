@@ -36,7 +36,7 @@ Install the GUI and CLI:
 
 ```
 pip install git+https://github.com/iBridges-for-iRODS/ibridges-plugin-dataverse.git
-pip install ibridgesdvn[gui]
+pip install "ibridgesdvn[gui]"
 ```
 
 This installs the python package `ibridgesdvn`.
