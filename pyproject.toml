@@ -79,9 +79,9 @@ ignore_missing_imports = true
 ignore-patterns="_version.py"
 extension-pkg-whitelist=["PySide6"]
 ignore-paths = [
-  "^ibridgescontrib/ibridgesdvn/uiDataverse\\.py$",
-  "^ibridgescontrib/ibridgesdvn/uiCreateUrl\\.py$",
-  "^ibridgescontrib/ibridgesdvn/uiCreateDataset\\.py$"
+  "^ibridgescontrib/ibridgesdvn/gui/uiDataverse\\.py$",
+  "^ibridgescontrib/ibridgesdvn/gui/uiCreateUrl\\.py$",
+  "^ibridgescontrib/ibridgesdvn/gui/uiCreateDataset\\.py$"
   
 ]
 
@@ -95,8 +95,8 @@ disable=["E0611", "E0401", "E0401", "E1101",
          "R0912", "R0916", "R0911", "R0801", "R0902"]
 
 [tool.ruff]
-exclude = ["_version.py", "ibridgescontrib/ibridgesdvn/uiDataverse.py",
-            "ibridgescontrib/ibridgesdvn/uiCreateUrl.py"]
+exclude = ["_version.py", "ibridgescontrib/ibridgesdvn/gui/uiDataverse.py",
+            "ibridgescontrib/ibridgesdvn/gui/uiCreateUrl.py"]
 line-length = 100
 lint.select = ["D", "E", "F", "W", "I", "N"]
 lint.ignore = ["D203", "D213"]

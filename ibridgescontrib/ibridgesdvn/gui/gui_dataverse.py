@@ -4,6 +4,7 @@ import logging
 import shutil
 from pathlib import Path
 
+import PySide6.QtWidgets
 from ibridges import IrodsPath
 from ibridges.session import Session
 from ibridgesgui.config import get_last_ienv_path
@@ -27,13 +28,6 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
 
     def __init__(self, session: Session, app_name: str, logger: logging.Logger):
         """Initialize the example tab."""
-        try:
-            import PySide6.QtWidgets
-        except ImportError as e:
-            raise ImportError(
-                "The 'dv' GUI plugin requires optional GUI dependencies.\n"
-                "Please install with: pip install ibridgescontrib[gui]"
-            ) from e
         super().__init__()
         super().setupUi(self)
         self.logger = logger
