@@ -14,9 +14,9 @@ from ibridgesgui.irods_tree_model import IrodsTreeModel
 from ibridgescontrib.ibridgesdvn.dataverse import Dataverse
 from ibridgescontrib.ibridgesdvn.dvn_config import DVNConf
 from ibridgescontrib.ibridgesdvn.dvn_operations import DvnOperations
-from ibridgescontrib.ibridgesdvn.gui_popup_widgets import CreateDataset, CreateDvnURL
-from ibridgescontrib.ibridgesdvn.gui_thread import TransferDataThread
-from ibridgescontrib.ibridgesdvn.uiDataverse import Ui_Form
+from ibridgescontrib.ibridgesdvn.gui.gui_popup_widgets import CreateDataset, CreateDvnURL
+from ibridgescontrib.ibridgesdvn.gui.gui_thread import TransferDataThread
+from ibridgescontrib.ibridgesdvn.gui.uiDataverse import Ui_Form
 
 # pylint: disable=R0902
 

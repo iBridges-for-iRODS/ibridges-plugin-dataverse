@@ -9,18 +9,25 @@
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
 
-from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
-    QMetaObject, QObject, QPoint, QRect,
-    QSize, QTime, QUrl, Qt)
-from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
-    QFont, QFontDatabase, QGradient, QIcon,
-    QImage, QKeySequence, QLinearGradient, QPainter,
-    QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QAbstractItemView, QApplication, QCheckBox, QComboBox,
-    QHBoxLayout, QHeaderView, QLabel, QLineEdit,
-    QProgressBar, QPushButton, QSizePolicy, QSpacerItem,
-    QTableWidget, QTableWidgetItem, QTreeView, QVBoxLayout,
-    QWidget)
+from PySide6.QtCore import QCoreApplication, QMetaObject, QSize
+from PySide6.QtGui import QFont
+from PySide6.QtWidgets import (
+    QAbstractItemView,
+    QCheckBox,
+    QComboBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QProgressBar,
+    QPushButton,
+    QSizePolicy,
+    QSpacerItem,
+    QTableWidget,
+    QTableWidgetItem,
+    QTreeView,
+    QVBoxLayout,
+)
+
 
 class Ui_Form(object):
     def setupUi(self, Form):
@@ -259,9 +266,9 @@ class Ui_Form(object):
         self.dv_create_ds_button.setText(QCoreApplication.translate("Form", u"Create New Dataset", None))
         self.check_checksum_box.setText(QCoreApplication.translate("Form", u"Compare checksums", None))
         ___qtablewidgetitem = self.selected_data_table.horizontalHeaderItem(0)
-        ___qtablewidgetitem.setText(QCoreApplication.translate("Form", u"Path", None));
+        ___qtablewidgetitem.setText(QCoreApplication.translate("Form", u"Path", None))
         ___qtablewidgetitem1 = self.selected_data_table.horizontalHeaderItem(1)
-        ___qtablewidgetitem1.setText(QCoreApplication.translate("Form", u"Size", None));
+        ___qtablewidgetitem1.setText(QCoreApplication.translate("Form", u"Size", None))
 #if QT_CONFIG(tooltip)
         self.delete_selected_button.setToolTip(QCoreApplication.translate("Form", u"\"Remove file(s) from table.\"", None))
 #endif // QT_CONFIG(tooltip)
