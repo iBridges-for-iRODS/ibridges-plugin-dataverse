@@ -53,7 +53,8 @@ class CreateDataset(PySide6.QtWidgets.QDialog, ui_create_dataset):
                 self.error_label.setText(f"Could not find {dv}.")
                 return
         except ApiAuthorizationError:
-            self.error_label.setText(f"Authorization Error, token invalid for {self.dvn_api.dvn_url}.")
+            self.error_label.setText(
+                    f"Authorization Error, token invalid for {self.dvn_api.dvn_url}.")
             return
 
         if self.json_file_label.text() != "":
