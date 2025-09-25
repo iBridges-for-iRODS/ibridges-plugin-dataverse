@@ -48,9 +48,12 @@ class CreateDataset(PySide6.QtWidgets.QDialog, ui_create_dataset):
         if self.json_file_label.text() == "" and self.meta_browser.toPlainText() == "":
             self.error_label.setText("Please choose a metadata json file or create metadata.")
             return
-
-        if not self.dvn_api.dataverse_exists(dv):
-            self.error_label.setText(f"Could not find {dv}.")
+        try:
+            if not self.dvn_api.dataverse_exists(dv):
+                self.error_label.setText(f"Could not find {dv}.")
+                return
+        except ApiAuthorizationError:
+            self.error_label.setText(f"Authorization Error, token invalid for {self.dvn_api.dvn_url}.")
             return
 
         if self.json_file_label.text() != "":
