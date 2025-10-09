@@ -14,9 +14,9 @@ from ibridgescontrib.ibridgesdvn.ds_meta import (
     is_valid_email,
     is_valid_name,
 )
-from ibridgescontrib.ibridgesdvn.uiCreateDataset import Ui_Dialog as ui_create_dataset
-from ibridgescontrib.ibridgesdvn.uiCreateMetadata import Ui_Dialog as ui_create_metadata
-from ibridgescontrib.ibridgesdvn.uiCreateUrl import Ui_Dialog as ui_create_url
+from ibridgescontrib.ibridgesdvn.gui.uiCreateDataset import Ui_Dialog as ui_create_dataset
+from ibridgescontrib.ibridgesdvn.gui.uiCreateMetadata import Ui_Dialog as ui_create_metadata
+from ibridgescontrib.ibridgesdvn.gui.uiCreateUrl import Ui_Dialog as ui_create_url
 
 
 class CreateDataset(PySide6.QtWidgets.QDialog, ui_create_dataset):
@@ -48,9 +48,13 @@ class CreateDataset(PySide6.QtWidgets.QDialog, ui_create_dataset):
         if self.json_file_label.text() == "" and self.meta_browser.toPlainText() == "":
             self.error_label.setText("Please choose a metadata json file or create metadata.")
             return
-
-        if not self.dvn_api.dataverse_exists(dv):
-            self.error_label.setText(f"Could not find {dv}.")
+        try:
+            if not self.dvn_api.dataverse_exists(dv):
+                self.error_label.setText(f"Could not find {dv}.")
+                return
+        except ApiAuthorizationError:
+            self.error_label.setText(
+                    f"Authorization Error, token invalid for {self.dvn_api.dvn_url}.")
             return
 
         if self.json_file_label.text() != "":

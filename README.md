@@ -20,16 +20,28 @@ All packages are installable with pip.
 ## :warning: NOTE
 
 - The plugin only transfers files which are smaller than 9GB!
-- All data from iRODS will be donwloaded to your local computer.
+- All data from iRODS will be downloaded to your local computer.
 
   The files will be downloaded one by one to a temporary folder. From there they are uploaded to Dataverse and are finally deleted from your computer. So you need at least 9GB of extra space. In case of errors in the upload to Dataverse, the file will **not** be deleted from them temporary folder so that files might accumulate on your computer.
  
 ## Install the plugin
 
+Install the CLI:
+
 ```
 pip install git+https://github.com/iBridges-for-iRODS/ibridges-plugin-dataverse.git
 ```
+
+Install the GUI and CLI:
+
+```
+pip install git+https://github.com/iBridges-for-iRODS/ibridges-plugin-dataverse.git
+pip install "ibridgesdvn[gui]"
+```
+
 This installs the python package `ibridgesdvn`.
+
+
 
 When you start the iBridges CLI or shell you will see the following new commands:
 
