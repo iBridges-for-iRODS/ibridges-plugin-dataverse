@@ -27,7 +27,13 @@ All packages are installable with pip.
  
 ## Install the plugin
 
-Install the CLI:
+Install the package from pypi:
+
+```
+pip install ibridgesdvn
+```
+
+Install the CLI from the git repository:
 
 ```
 pip install git+https://github.com/iBridges-for-iRODS/ibridges-plugin-dataverse.git
