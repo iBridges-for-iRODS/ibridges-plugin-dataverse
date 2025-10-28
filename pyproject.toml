@@ -49,7 +49,7 @@ test = [
 ]
 
 [project.entry-points."ibridges.shell"]
-dv-alias = "ibridgescontrib.ibridgesdvn:SETUP_COMMANDS"
+dv-setup = "ibridgescontrib.ibridgesdvn:SETUP_COMMANDS"
 dv-init = "ibridgescontrib.ibridgesdvn:INIT_COMMANDS"
 dv-switch = "ibridgescontrib.ibridgesdvn:SWITCH_COMMANDS"
 dv-push = "ibridgescontrib.ibridgesdvn:PUSH_COMMANDS"
