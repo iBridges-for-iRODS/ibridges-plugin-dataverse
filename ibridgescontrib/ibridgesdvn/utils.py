@@ -19,25 +19,32 @@ def create_unique_filename(local_dir: Path, filename: str):
     return local_path
 
 
-def calculate_sha1_checksum(file_path):
-    """Calculate the SHA-1 checksum of a file.
+def calculate_checksum(file_path, alg = "sha1"):
+    """Calculate the checksum of a file.
 
     Parameters
     ----------
     file_path:
         Path to the file.
+    alg:
+        Hash algorithm: sha1, md5
 
     Returns
     -------
-        SHA-1 checksum as a hexadecimal string.
+        Checksum as a hexadecimal string.
 
     """
-    sha1 = hashlib.sha1()
+    if alg == "sha1":
+        checksum = hashlib.sha1()
+    elif alg == "md5":
+        checksum = hashlib.md5()
+    else:
+        raise ValueError(f"Unsupported algorithm: {alg}")
     try:
         with open(file_path, "rb") as f:
             for chunk in iter(lambda: f.read(8192), b""):
-                sha1.update(chunk)
-        return sha1.hexdigest()
+                checksum.update(chunk)
+        return checksum.hexdigest()
     except FileNotFoundError:
         print(f"File not found: {file_path}")
         return None

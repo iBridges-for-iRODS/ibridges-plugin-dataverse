@@ -14,7 +14,7 @@ from ibridgescontrib.ibridgesdvn.dataverse import Dataverse
 from ibridgescontrib.ibridgesdvn.ds_meta import build_metadata, gather_metadata_inputs
 from ibridgescontrib.ibridgesdvn.dvn_config import DVNConf
 from ibridgescontrib.ibridgesdvn.dvn_operations import DvnOperations
-from ibridgescontrib.ibridgesdvn.utils import calculate_sha1_checksum, create_unique_filename
+from ibridgescontrib.ibridgesdvn.utils import calculate_checksum, create_unique_filename
 
 
 class CliDvnCreateDataset(BaseCliCommand):
@@ -275,11 +275,11 @@ class CliDvnPush(BaseCliCommand):
                     dvn_api.add_datafile_to_dataset(args.dataset_id, local_path)
                     print(f"Uploaded {local_path} --> {args.dataset_id}")
                     if args.check_checksum:
-                        sha1 = calculate_sha1_checksum(local_path)
-                        dvn_sha1 = dvn_api.get_checksum_by_filename(
+                        alg, dvn_checksum = dvn_api.get_checksum_by_filename(
                             args.dataset_id, local_path.name
                         )
-                        if sha1 != dvn_sha1:
+                        checksum = calculate_checksum(local_path, alg = alg)
+                        if checksum != dvn_checksum:
                             warnings.warn(
                                 "DATAVERSE ERROR: Local file and file in dataset are not the same."
                             )

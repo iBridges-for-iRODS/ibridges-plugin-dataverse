@@ -7,7 +7,7 @@ from ibridges import IrodsPath, Session, download
 
 from ibridgescontrib.ibridgesdvn.dataverse import Dataverse
 from ibridgescontrib.ibridgesdvn.dvn_operations import DvnOperations
-from ibridgescontrib.ibridgesdvn.utils import calculate_sha1_checksum, create_unique_filename
+from ibridgescontrib.ibridgesdvn.utils import calculate_checksum, create_unique_filename
 
 
 class TransferDataThread(PySide6.QtCore.QThread):
@@ -84,11 +84,11 @@ class TransferDataThread(PySide6.QtCore.QThread):
                     )
                     # check checksums
                     if self.checksum:
-                        sha1 = calculate_sha1_checksum(local_path)
-                        dvn_sha1 = self.dvn_api.get_checksum_by_filename(
+                        alg, dvn_checksum = self.dvn_api.get_checksum_by_filename(
                             self.dataset_id, local_path.name
                         )
-                        if sha1 != dvn_sha1:
+                        checksum = calculate_checksum(local_path, alg = alg)
+                        if checksum != dvn_checksum:
                             self.logger.error(
                                 "DATAVERSE: ERROR: transfer  %s --> %s failed, checksum error",
                                 str(local_path),

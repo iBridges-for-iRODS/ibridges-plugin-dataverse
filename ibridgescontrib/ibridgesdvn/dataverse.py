@@ -269,6 +269,7 @@ class Dataverse:
         files = data_dict["data"]["latestVersion"]["files"]
         for file in files:
             if file.get("label") == target_label:
-                return file["dataFile"]["checksum"]["value"]
+                return (file["dataFile"]["checksum"]["type"].lower(),
+                        file["dataFile"]["checksum"]["value"])
 
         return None
