@@ -27,7 +27,7 @@ def calculate_checksum(file_path, alg = "sha1"):
     file_path:
         Path to the file.
     alg:
-        Hash algorithm: sha1, md5
+        Hash algorithm: sha1, sha-256, sha-512, md5
 
     Returns
     -------
@@ -38,6 +38,10 @@ def calculate_checksum(file_path, alg = "sha1"):
         checksum = hashlib.sha1()
     elif alg == "md5":
         checksum = hashlib.md5()
+    elif alg == "sha256":
+        checksum = hashlib.sha256()
+    elif alg == "sha512":
+        checksum = hashlib.sha512()
     else:
         raise ValueError(f"Unsupported algorithm: {alg}")
     try:
