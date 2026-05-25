@@ -68,10 +68,34 @@ class Dataverse:
         resp = self.api.get_dataset(f"doi:{dataset_id}")
         return resp.status_code in range(200, 300)
 
+    def is_dataset_published(self, dataset_id: str) -> bool:
+        """
+        Return True if the dataset is published (i.e., not in DRAFT state).
+        """
+        info = self.get_dataset_info(dataset_id)
+        state = info["data"]["latestVersion"]["versionState"]
+        return state.upper() == "RELEASED"
+
+    def _normalize_bare_id(self, dataset_id: str) -> str:
+        """Ensure dataset_id is always bare (no doi: prefix)."""
+        if dataset_id.startswith("doi:"):
+            return dataset_id[4:]
+        return dataset_id
+    
+    def _to_doi(self, dataset_id: str) -> str:
+        """Convert bare ID to full DOI."""
+        bare = self._normalize_bare_id(dataset_id)
+        return f"doi:{bare}"
+    
     def get_dataset_info(self, dataset_id: str) -> Dict[str, Any]:
-        resp = self.api.get_dataset(f"doi:{dataset_id}")
+        pid = self._to_doi(dataset_id)
+        resp = self.api.get_dataset(pid)
         resp.raise_for_status()
         return resp.json()
+    
+    def get_dataset_state(self, dataset_id: str) -> str:
+        info = self.get_dataset_info(dataset_id)
+        return info["data"]["latestVersion"]["versionState"]
 
     def create_dataset_with_json(
         self,
@@ -115,6 +139,11 @@ class Dataverse:
         resp = self.api.create_dataset(dataverse, ds.json())
         resp.raise_for_status()
         return resp.json()
+
+    def delete_dataset(self, dataset_id: str):
+        pid = self._to_doi(dataset_id)
+        resp = self.http.delete(f"/api/datasets/:persistentId/?persistentId={pid}")
+        resp.raise_for_status()
 
     def add_datafile_to_dataset(
         self,

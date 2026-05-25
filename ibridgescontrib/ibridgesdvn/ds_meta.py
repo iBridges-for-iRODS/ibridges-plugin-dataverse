@@ -1,7 +1,10 @@
 """Fetch information and build Dataverse dataset metadata."""
 
+from __future__ import annotations
+
 import json
 import re
+from typing import Any, Dict, List
 
 DATAVERSE_SUBJECTS = [
     "Agricultural Sciences",
@@ -20,28 +23,27 @@ DATAVERSE_SUBJECTS = [
     "Other",
 ]
 
+# ---------- CLI input helpers ----------
 
-# CLI functions
-def get_non_empty_input(prompt):
-    """Prompt to screen and check if answer is not empty."""
+def get_non_empty_input(prompt: str) -> str:
+    """Prompt until a non-empty answer is given."""
     while True:
         value = input(prompt).strip()
         if value:
             return value
 
-
-def collect_authors():
-    """Collect authors."""
-    authors = []
+def collect_authors() -> List[Dict[str, Any]]:
+    """Collect authors interactively."""
+    authors: List[Dict[str, Any]] = []
     while True:
         print("\nEnter author details:")
-        # Validate name
         while True:
-            name = input("  Contact name (Last, First): ").strip()
+            name = input("  Author name (Last, First): ").strip()
             if is_valid_name(name):
                 break
             print("  ❌ Invalid format. Use 'Last, First'.")
         affiliation = get_non_empty_input("  Author affiliation: ")
+
         authors.append(
             {
                 "authorName": {
@@ -58,25 +60,25 @@ def collect_authors():
                 },
             }
         )
+
         more = input("  Add another author? (y/n): ").strip().lower()
         if more != "y":
             break
     return authors
 
 
-def collect_contacts():
-    """Collect dataset contacts."""
-    contacts = []
+def collect_contacts() -> List[Dict[str, Any]]:
+    """Collect dataset contacts interactively."""
+    contacts: List[Dict[str, Any]] = []
     while True:
         print("\nEnter dataset contact details:")
-        # Validate name
+
         while True:
             name = input("  Contact name (Last, First): ").strip()
             if is_valid_name(name):
                 break
             print("  ❌ Invalid format. Use 'Last, First'.")
 
-        # Validate email
         while True:
             email = input("  Contact email: ").strip()
             if is_valid_email(email):
@@ -99,15 +101,16 @@ def collect_contacts():
                 },
             }
         )
+
         more = input("  Add another contact? (y/n): ").strip().lower()
         if more != "y":
             break
     return contacts
 
 
-def collect_descriptions():
-    """Collect descriptions."""
-    descriptions = []
+def collect_descriptions() -> List[Dict[str, Any]]:
+    """Collect dataset descriptions interactively."""
+    descriptions: List[Dict[str, Any]] = []
     while True:
         print("\nEnter dataset description:")
         desc = get_non_empty_input("  Description: ")
@@ -127,9 +130,9 @@ def collect_descriptions():
     return descriptions
 
 
-def collect_subjects():
-    """Collect subjects."""
-    subjects = []
+def collect_subjects() -> List[str]:
+    """Collect Dataverse subjects interactively."""
+    subjects: List[str] = []
     print("\nEnter subject(s). Type '?' to list valid subjects.")
     while True:
         subject = input("  Subject: ").strip()
@@ -138,6 +141,7 @@ def collect_subjects():
             for s in DATAVERSE_SUBJECTS:
                 print(f"    - {s}")
             continue
+
         if subject in DATAVERSE_SUBJECTS:
             if subject not in subjects:
                 subjects.append(subject)
@@ -145,42 +149,45 @@ def collect_subjects():
                 print("  Already added.")
         else:
             print("  ❌ Invalid subject. Type '?' to see the list of valid subjects.")
+
         more = input("  Add another subject? (y/n): ").strip().lower()
         if more != "y":
             break
     return subjects
 
 
-def gather_metadata_inputs():
-    """Gather metadata inputs."""
+def gather_metadata_inputs() -> Dict[str, Any]:
+    """Gather all metadata inputs interactively."""
     print("=== Dataset Metadata Entry Tool ===\n")
 
-    inputs = {
+    return {
         "title": get_non_empty_input("Enter dataset title: "),
         "authors": collect_authors(),
         "contacts": collect_contacts(),
         "descriptions": collect_descriptions(),
         "subjects": collect_subjects(),
     }
-    return inputs
 
+# ---------- Validation helpers ----------
 
-# General functions
-def is_valid_email(email):
+def is_valid_email(email: str) -> bool:
     """Check if email is valid using regex."""
     pattern = r"^[\w\.-]+@[\w\.-]+\.\w+$"
-    return re.match(pattern, email)
+    return re.match(pattern, email) is not None
 
 
-def is_valid_name(name):
+def is_valid_name(name: str) -> bool:
     """Check if name is in 'Last, First' format."""
     parts = [p.strip() for p in name.split(",")]
     return len(parts) == 2 and all(parts)
 
 
-def build_metadata(inputs):
-    """Build metadata dictionary from collected inputs."""
-    meta = {
+# ---------- Metadata building ----------
+
+
+def build_metadata(inputs: Dict[str, Any]) -> Dict[str, Any]:
+    """Build Dataverse metadata dictionary from collected inputs."""
+    return {
         "datasetVersion": {
             "metadataBlocks": {
                 "citation": {
@@ -222,5 +229,7 @@ def build_metadata(inputs):
         }
     }
 
-    json_string = json.dumps(meta, indent=2)
-    return json_string
+
+def build_metadata_json(inputs: Dict[str, Any]) -> str:
+    """Build metadata and return as JSON string."""
+    return json.dumps(build_metadata(inputs), indent=2)

@@ -1,25 +1,31 @@
-"""Utils used by Cli and Gui."""
+"""Utils used by CLI and GUI."""
+
+from __future__ import annotations
 
 import hashlib
 from pathlib import Path
+from typing import Optional
 
 
-def create_unique_filename(local_dir: Path, filename: str):
-    """Create a unique filename for a directory and original filename."""
-    print(local_dir, filename)
+def create_unique_filename(local_dir: Path, filename: str) -> Path:
+    """Create a unique filename in a directory based on an original filename."""
+    local_dir = Path(local_dir)
+    local_dir.mkdir(parents=True, exist_ok=True)
+
+    base = Path(filename).stem
+    suffix = Path(filename).suffix  # includes the dot, e.g. ".txt"
+
+    candidate = local_dir / (base + suffix)
     counter = 1
-    local_path = local_dir / filename
-    while local_path.exists():
-        extension = filename.split(".")[-1]
-        name = ".".join(filename.split(".")[:-1])
-        print(name, extension)
-        local_path = local_dir / (name + "_" + str(counter) + extension)
+
+    while candidate.exists():
+        candidate = local_dir / f"{base}_{counter}{suffix}"
         counter += 1
 
-    return local_path
+    return candidate
 
 
-def calculate_checksum(file_path, alg = "sha1"):
+def calculate_checksum(file_path: Path, alg: str = "sha1") -> Optional[str]:
     """Calculate the checksum of a file.
 
     Parameters
@@ -27,31 +33,37 @@ def calculate_checksum(file_path, alg = "sha1"):
     file_path:
         Path to the file.
     alg:
-        Hash algorithm: sha1, sha-256, sha-512, md5
+        Hash algorithm: sha1, sha256, sha512, md5
 
     Returns
     -------
-        Checksum as a hexadecimal string.
-
+    Checksum as a hexadecimal string, or None on error.
     """
-    if alg == "sha1":
-        checksum = hashlib.sha1()
-    elif alg == "md5":
-        checksum = hashlib.md5()
-    elif alg == "sha256":
-        checksum = hashlib.sha256()
-    elif alg == "sha512":
-        checksum = hashlib.sha512()
-    else:
+    file_path = Path(file_path)
+
+    # Normalize algorithm names like "SHA-1" → "sha1"
+    alg = alg.lower().replace("-", "")
+
+    algorithms = {
+        "sha1": hashlib.sha1,
+        "md5": hashlib.md5,
+        "sha256": hashlib.sha256,
+        "sha512": hashlib.sha512,
+    }
+
+    if alg not in algorithms:
         raise ValueError(f"Unsupported algorithm: {alg}")
+
+    hasher = algorithms[alg]()
+
     try:
-        with open(file_path, "rb") as f:
+        with file_path.open("rb") as f:
             for chunk in iter(lambda: f.read(8192), b""):
-                checksum.update(chunk)
-        return checksum.hexdigest()
+                hasher.update(chunk)
+        return hasher.hexdigest()
     except FileNotFoundError:
         print(f"File not found: {file_path}")
         return None
-    except IOError as e:
-        print(f"I/O error: {e}")
+    except OSError as e:
+        print(f"I/O error while reading {file_path}: {e}")
         return None
