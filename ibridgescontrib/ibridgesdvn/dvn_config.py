@@ -18,7 +18,7 @@ class DVNConf:
 
     def __init__(
         self,
-        parser: argparse.ArgumentParser | None,
+        parser: argparse.ArgumentParser | None = None,
         config_path: Union[str, Path] = DVN_CONFIG_FP,
     ) -> None:
         self.parser = parser

@@ -1,8 +1,8 @@
 from ibridges.cli.base import BaseCliCommand
 
-from ibridgescontrib.ibridgesdvn.dvn_operations import DvnOperations
-from ibridgescontrib.ibridgesdvn.dvn_config import DVNConf
 from ibridgescontrib.ibridgesdvn.dataverse import Dataverse
+from ibridgescontrib.ibridgesdvn.dvn_config import DVNConf
+from ibridgescontrib.ibridgesdvn.dvn_operations import DvnOperations
 
 
 class CliDvnStatus(BaseCliCommand):
@@ -18,8 +18,8 @@ class CliDvnStatus(BaseCliCommand):
 
         dvn_api = Dataverse(cur_url, token)
 
+        # Clean up published drafts (optional but recommended)
         ops.remove_published_drafts(cur_url, dvn_api)
 
-        ops.show(dvn_api=dvn_api)
-        ops.show_created_datasets(dvn_api=dvn_api)
-
+        # Unified status display
+        ops.show_status(cur_url, dvn_api)

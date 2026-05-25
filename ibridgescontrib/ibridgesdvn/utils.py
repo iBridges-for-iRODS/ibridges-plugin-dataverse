@@ -38,6 +38,7 @@ def calculate_checksum(file_path: Path, alg: str = "sha1") -> Optional[str]:
     Returns
     -------
     Checksum as a hexadecimal string, or None on error.
+
     """
     file_path = Path(file_path)
 

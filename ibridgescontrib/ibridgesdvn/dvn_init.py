@@ -5,8 +5,8 @@ import sys
 from getpass import getpass
 
 from ibridges.cli.base import BaseCliCommand
-from ibridgescontrib.ibridgesdvn.dvn_config import DVNConf, show_available
 
+from ibridgescontrib.ibridgesdvn.dvn_config import DVNConf, show_available
 
 # ----------------------------------------------------------------------
 # dv-init
