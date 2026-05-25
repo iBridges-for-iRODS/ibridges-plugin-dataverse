@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import httpx
 import json
 import warnings
 from pathlib import Path
@@ -199,14 +200,41 @@ class DVNConf:
 
 def show_available(dvn_conf):
     """Print available Dataverse configurations and highlight active one."""
+
     for url, entry in dvn_conf.dvns.items():
         is_active = dvn_conf.cur_dvn in (url, entry.get("alias"))
         prefix = "*" if is_active else " "
 
         alias = entry.get("alias", "[no alias]")
-
-        # Token indicator
         token = entry.get("token")
-        token_status = "[token set]" if token else "[no token]"
 
-        print(f"{prefix} {alias: <15} -> {url: <35} {token_status}")
+        # Default status
+        token_status = "[no token]" if not token else "[token set]"
+
+        # Check if URL is a Dataverse instance
+        try:
+            resp = httpx.get(f"{url}/api/info/version", timeout=3.0)
+            if resp.status_code == 200:
+                url_status = "[dataverse OK]"
+            else:
+                url_status = "[invalid dataverse]"
+        except Exception:
+            url_status = "[unreachable]"
+
+        # If URL is valid AND token exists → validate token
+        if token and url_status == "[dataverse OK]":
+            try:
+                resp = httpx.get(
+                    f"{url}/api/users/:me",
+                    headers={"X-Dataverse-key": token},
+                    timeout=3.0,
+                )
+                if resp.status_code == 200:
+                    token_status = "[token OK]"
+                else:
+                    token_status = "[token invalid]"
+            except Exception:
+                token_status = "[token invalid]"
+
+        print(f"{prefix} {alias: <15} -> {url: <35} {url_status} {token_status}")
+

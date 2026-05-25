@@ -45,11 +45,15 @@ class Dataverse:
 
     def _token_valid(self) -> bool:
         """Return True if the API token is valid for this Dataverse instance."""
-        auth = BearerTokenAuth(self.token)
-        req = httpx.Request("GET", self.url)
-        modified = next(auth.auth_flow(req))
-        return modified.headers.get("authorization") == f"Bearer {self.token}"
-
+        try:
+            resp = httpx.get(
+                f"{self.url}/api/users/:me",
+                headers={"X-Dataverse-key": self.token},
+                timeout=5.0,
+            )
+            return resp.status_code == 200
+        except Exception:
+            return False
 
     def dataverse_exists(self, alias: str) -> bool:
         """Return True if a dataverse with the given alias exists."""
