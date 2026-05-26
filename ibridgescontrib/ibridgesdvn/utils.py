@@ -5,6 +5,8 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 from typing import Optional
+from typing import Optional, Tuple
+from ibridgescontrib.ibridgesdvn.dataverse import Dataverse
 
 
 def create_unique_filename(local_dir: Path, filename: str) -> Path:
@@ -68,3 +70,31 @@ def calculate_checksum(file_path: Path, alg: str = "sha1") -> Optional[str]:
     except OSError as e:
         print(f"I/O error while reading {file_path}: {e}")
         return None
+
+
+def ensure_connection(dvn_conf, url: str) -> Tuple[bool, Optional[Dataverse], Optional[str]]:
+    """
+    Validate URL + token exactly like the CLI does.
+
+    Returns:
+        (ok, dv_api, error_message)
+        ok: True if connection succeeded
+        dv_api: Dataverse instance or None
+        error_message: None if ok, otherwise a string
+    """
+    # 1. Extract token from config
+    try:
+        entry = dvn_conf.get_entry(url)[1]
+    except Exception as exc:
+        return False, None, f"Invalid Dataverse entry: {exc}"
+
+    token = entry.get("token", None)
+    if not token:
+        return False, None, "Token is missing. Please setup connection."
+
+    # 2. Try to construct Dataverse client (CLI-style)
+    try:
+        dv_api = Dataverse(url, token)
+        return True, dv_api, None
+    except Exception as exc:
+        return False, None, repr(exc)

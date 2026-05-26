@@ -4,6 +4,7 @@ from ibridges.cli.base import BaseCliCommand
 from ibridgescontrib.ibridgesdvn.dataverse import Dataverse
 from ibridgescontrib.ibridgesdvn.dvn_config import DVNConf
 from ibridgescontrib.ibridgesdvn.dvn_operations import DvnOperations
+from ibridgescontrib.ibridgesdvn.utils import ensure_connection
 
 from ibridgescontrib.ibridgesdvn.ds_meta import (
     gather_metadata_inputs,
@@ -31,9 +32,11 @@ class CliDvnCreateDataset(BaseCliCommand):
         dvn_conf = DVNConf(parser)
 
         cur_url = dvn_conf.cur_dvn
-        token = dvn_conf.get_entry(cur_url)[1]["token"]
 
-        dvn_api = Dataverse(cur_url, token)
+        exists, dvn_api, err = ensure_connection(dvn_conf, cur_url)
+        if not exists:
+            print(err)
+            return
 
         if args.metajson:
             metadata_json = args.metajson.read_text(encoding="utf-8")

@@ -34,23 +34,26 @@ class TransferDataThread(PySide6.QtCore.QThread):
             path to the irods_environment.json to create a new session.
         logger : logging.Logger
             Logger
-        irods_paths : list
-            List of absolute iRODS paths to be transferred.
         """
         super().__init__()
 
         self.logger = logger
         self.thread_session = Session(irods_env=ienv_path)
         self.logger.debug("DATAVERSE: Transfer data thread: Created new session.")
+
         self.dvn_ops = dvn_ops
         self.checksum = checksum
         self.tempdir = tempdir
         self.dataset_id = dataset_id
         self.dvn_url = dvn_url
+
+        # Get paths from DvnOperations without passing URL again
         self.irods_paths = [
             IrodsPath(self.thread_session, ip)
-            for ip in self.dvn_ops.get_paths(self.dvn_url, self.dataset_id)
+            for ip in self.dvn_ops.get_paths(self.dataset_id)
         ]
+
+        # Separate Dataverse client for upload/checksum
         self.dvn_api = Dataverse(self.dvn_url, dvn_token)
 
     def _delete_session(self):
@@ -67,8 +70,7 @@ class TransferDataThread(PySide6.QtCore.QThread):
         """Run the thread."""
         file_count = 0
         file_failed = 0
-        transfer_out = {}
-        transfer_out["error"] = ""
+        transfer_out: dict[str, str] = {"error": ""}
 
         for irods_path in self.irods_paths:
             if irods_path.dataobject_exists():
@@ -78,16 +80,17 @@ class TransferDataThread(PySide6.QtCore.QThread):
                     self.logger.info(
                         "DATAVERSE: Download %s --> %s", str(irods_path), str(local_path)
                     )
+
                     self.dvn_api.add_datafile_to_dataset(self.dataset_id, local_path)
                     self.logger.info(
                         "DATAVERSE: Upload %s --> %s", str(local_path), self.dataset_id
                     )
-                    # check checksums
+
                     if self.checksum:
                         alg, dvn_checksum = self.dvn_api.get_checksum_by_filename(
                             self.dataset_id, local_path.name
                         )
-                        checksum = calculate_checksum(local_path, alg = alg)
+                        checksum = calculate_checksum(local_path, alg=alg)
                         if checksum != dvn_checksum:
                             self.logger.error(
                                 "DATAVERSE: ERROR: transfer  %s --> %s failed, checksum error",
@@ -95,9 +98,8 @@ class TransferDataThread(PySide6.QtCore.QThread):
                                 self.dataset_id,
                             )
                             file_failed += 1
-                            transfer_out["error"] = (
-                                transfer_out["error"]
-                                + f"\nTransfer failed, checksum error for {str(irods_path)}."
+                            transfer_out["error"] += (
+                                f"\nTransfer failed, checksum error for {str(irods_path)}."
                             )
                         else:
                             self.logger.info(
@@ -106,18 +108,19 @@ class TransferDataThread(PySide6.QtCore.QThread):
                                 self.dataset_id,
                             )
                             file_count += 1
-                    self.dvn_ops.rm_file(self.dvn_url, self.dataset_id, str(irods_path))
+
+                    # Remove from pending list via DvnOperations (no URL needed)
+                    self.dvn_ops.rm_file(self.dataset_id, str(irods_path))
                     local_path.unlink()
 
                 except Exception as err:  # pylint: disable=W0718
                     self.logger.error("DATAVERSE: Error in download and upload: %s", repr(err))
-                    transfer_out["error"] = (
-                        transfer_out["error"] + "\nSomething went wrong, check the logs."
-                    )
+                    transfer_out["error"] += "\nSomething went wrong, check the logs."
             else:
                 self.logger.error("DATAVERSE: ERROR: iRODS %s not found.", str(irods_path))
                 file_failed += 1
-                transfer_out["error"] = transfer_out["error"] + f"\n{irods_path} not found."
+                transfer_out["error"] += f"\n{irods_path} not found."
+
             self.current_progress.emit([file_count, len(self.irods_paths), file_failed])
 
         self._delete_session()

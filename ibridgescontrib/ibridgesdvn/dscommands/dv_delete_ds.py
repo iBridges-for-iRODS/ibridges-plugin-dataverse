@@ -1,7 +1,7 @@
 from ibridgescontrib.ibridgesdvn.dataverse import Dataverse
 from ibridgescontrib.ibridgesdvn.dvn_config import DVNConf
 from ibridgescontrib.ibridgesdvn.dvn_operations import DvnOperations
-
+from ibridgescontrib.ibridgesdvn.utils import ensure_connection
 
 class CliDvnDeleteDataset(BaseCliCommand):
     names = ["dv-delete-ds"]
@@ -17,9 +17,11 @@ class CliDvnDeleteDataset(BaseCliCommand):
     def run_shell(session, parser, args):
         dvn_conf = DVNConf(parser)
         cur_url = dvn_conf.cur_dvn
-        token = dvn_conf.get_entry(cur_url)[1]["token"]
-
-        dvn_api = Dataverse(cur_url, token)
+        
+        exists, dvn_api, err = ensure_connection(dvn_conf, cur_url)
+        if not exists:
+            print(err)
+            return
         ops = DvnOperations()
 
         dataset_id = args.dataset_id.strip()

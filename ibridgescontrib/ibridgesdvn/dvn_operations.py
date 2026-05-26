@@ -124,6 +124,11 @@ class DvnOperations:
             # Fail-open: if we can't read the setting, don't block upload.
             return False
 
+    @property
+    def connected(self) -> bool:
+        """Return True if a Dataverse API connection is active."""
+        return hasattr(self, "api") and self.api is not None
+
 
     def add_file(self, dv_url: str, dataset_id: str, irods_path: str) -> None:
         """Stage an iRODS path for upload to a dataset."""

@@ -24,7 +24,7 @@ classifiers = [
 ]
 
 dependencies = [
-    "ibridges>=2.0.0, <2.1",
+    "ibridges>=2.1.0, <2.2",
     "pyDataverse",
     "httpx"
 ]
@@ -37,7 +37,7 @@ documentation = "https://github.com/iBridges-for-iRODS/iBridges"
 
 [project.optional-dependencies]
 gui = [
-    "ibridgesgui>=2.0.0, <3.0.0"
+    "ibridgesgui>=2.1.0, <2.2.0"
 ]
 test = [
     "pylint",

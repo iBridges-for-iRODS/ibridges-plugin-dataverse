@@ -1,7 +1,7 @@
 from ibridges.cli.base import BaseCliCommand
 from ibridgescontrib.ibridgesdvn.dvn_operations import DvnOperations
 from ibridgescontrib.ibridgesdvn.dvn_config import DVNConf
-
+from ibridgescontrib.ibridgesdvn.utils import ensure_connection
 
 class CliDvnPush(BaseCliCommand):
     names = ["dv-push"]
@@ -20,6 +20,11 @@ class CliDvnPush(BaseCliCommand):
     def run_shell(session, parser, args):
         dvn_conf = DVNConf(parser)
         cur_url = dvn_conf.cur_dvn
+        
+        exists, _, err = ensure_connection(dvn_conf, cur_url)
+        if not exists:
+            print(err)
+            return
 
         ops = DvnOperations()
         ops.push_dataset(
