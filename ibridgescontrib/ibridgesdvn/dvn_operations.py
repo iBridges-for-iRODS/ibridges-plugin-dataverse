@@ -8,8 +8,8 @@ import warnings
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Dict, List, Optional
-import httpx
 
+import httpx
 from ibridges import IrodsPath, download
 
 from ibridgescontrib.ibridgesdvn.dataverse import Dataverse
