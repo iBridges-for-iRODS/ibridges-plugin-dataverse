@@ -64,6 +64,9 @@ jobs:
         run: |
           pip install ".[test]"
 
+      - name: Install latest Ruff
+        run: pip install --upgrade ruff
+
       - name: Lint with Ruff
         run: |
           ruff check ibridgescontrib/ibridgesdvn

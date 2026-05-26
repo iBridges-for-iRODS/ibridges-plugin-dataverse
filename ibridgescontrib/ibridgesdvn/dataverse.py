@@ -1,275 +1,194 @@
-"""Dataverse functionality for creating a draft."""
+"""Dataverse backend for dataset creation, metadata retrieval, and file upload."""
+
+from __future__ import annotations
 
 from pathlib import Path
+from typing import Any, Dict, Optional, Tuple
 
-from httpx import Client, Request
-from httpx._exceptions import HTTPError
+import httpx
 from pyDataverse.api import NativeApi
-from pyDataverse.auth import BearerTokenAuth
 from pyDataverse.exceptions import ApiAuthorizationError
 from pyDataverse.models import Datafile, Dataset
-from pyDataverse.utils import read_file
 
 
 class Dataverse:
-    """A utility class to interact with a Dataverse instance using the provided URL and API token.
+    """A backend wrapper around Dataverse operations.
 
-    This class supports authentication, dataset management, and metadata retrieval.
+    Responsibilities:
+    - Authentication
+    - Dataset creation
+    - Dataset metadata retrieval
+    - File upload
+    - File checksum lookup
+    - Max upload size lookup
     """
 
-    def __init__(self, url: str, token: str):
-        """Initialise the DataverseOperations instance.
-
-        Args:
-        ----
-            url (str): The base URL of the Dataverse instance.
-            token (str): The API token used for authentication.
-
-        Raises:
-        ------
-            ValueError: If the API token is not provided.
-            ApiAuthorizationError: If the token does not successfully authenticate.
-
-        """
-        self.dvn_url = url
-        self.dvn_token = token
-
-        if self.dvn_token is None:
+    def __init__(self, url: str, token: str) -> None:
+        """Initialize the Dataverse client with base URL and API token."""
+        if not token:
             raise ValueError("Dataverse API token cannot be empty.")
 
-        if self.user_authenticated():
-            self.api = NativeApi(self.dvn_url, self.dvn_token)
-        else:
+        self.url = url.rstrip("/")
+        self.token = token
+
+        if not self._token_valid():
             raise ApiAuthorizationError("Dataverse and API token do not match.")
 
-    def user_authenticated(self) -> True:
-        """Verify if the user token is valid for the Dataverse instance.
+        self.api = NativeApi(self.url, self.token)
+        self.http = httpx.Client(
+            base_url=self.url,
+            headers={"X-Dataverse-key": self.token},
+            timeout=30.0,
+        )
 
-        Returns:
-        -------
-            bool: True if the token is valid and authentication succeeds.
+    def _token_valid(self) -> bool:
+        """Return True if the API token is valid for this Dataverse instance."""
+        try:
+            resp = httpx.get(
+                f"{self.url}/api/users/:me",
+                headers={"X-Dataverse-key": self.token},
+                timeout=5.0,
+            )
+            return resp.status_code == 200
+        except Exception:
+            return False
 
-        Note:
-        ----
-            This method performs a basic request with the Bearer token to check authorization.
+    def dataverse_exists(self, alias: str) -> bool:
+        """Return True if a dataverse with the given alias exists."""
+        resp = self.api.get_dataverse(alias)
+        return resp.status_code == 200
 
-        """
-        auth = BearerTokenAuth(self.dvn_token)
-        request = Request("GET", self.dvn_url)
-        modified_request = next(auth.auth_flow(request))
-        return modified_request.headers["authorization"] == "Bearer " + self.dvn_token
+    def get_dataverse_info(self, alias: str) -> Dict[str, Any]:
+        """Return metadata for the specified dataverse."""
+        return self.api.get_children(alias)
 
-    def get_dataverse_info(self, dataverse):
-        """Retrieve the children (datasets and sub-dataverses) of a specified Dataverse.
+    def list_dataverse_content(self, alias: str) -> Dict[str, Any]:
+        """Return the contents of a dataverse using the native Dataverse API."""
+        resp = self.http.get(f"/api/dataverses/{alias}/contents")
+        resp.raise_for_status()
+        return resp.json()
 
-        Args:
-        ----
-            dataverse (str): The alias or identifier of the Dataverse.
+    def _normalize_bare_id(self, dataset_id: str) -> str:
+        """Return the dataset ID without a doi: prefix."""
+        if dataset_id.startswith("doi:"):
+            return dataset_id[4:]
+        return dataset_id
 
-        Returns:
-        -------
-            dict: The response containing child items of the Dataverse.
+    def _to_doi(self, dataset_id: str) -> str:
+        """Return the dataset ID with a doi: prefix."""
+        bare = self._normalize_bare_id(dataset_id)
+        return f"doi:{bare}"
 
-        """
-        return self.api.get_children(dataverse)
+    def dataset_exists(self, dataset_id: str) -> bool:
+        """Return True if a dataset with the given ID exists."""
+        pid = self._to_doi(dataset_id)
+        resp = self.api.get_dataset(pid)
+        return resp.status_code in range(200, 300)
 
-    def dataverse_exists(self, dataverse: str):
-        """Check whether a specified Dataverse exists.
+    def get_dataset_info(self, dataset_id: str) -> Dict[str, Any]:
+        """Return full dataset metadata for the given dataset ID."""
+        pid = self._to_doi(dataset_id)
+        resp = self.api.get_dataset(pid)
+        resp.raise_for_status()
+        return resp.json()
 
-        Args:
-        ----
-            dataverse (str): The alias or identifier of the Dataverse.
+    def get_dataset_state(self, dataset_id: str) -> str:
+        """Return the Dataverse versionState for the dataset."""
+        info = self.get_dataset_info(dataset_id)
+        return info["data"]["latestVersion"]["versionState"]
 
-        Returns:
-        -------
-            bool: True if the Dataverse exists; False otherwise.
+    def is_dataset_published(self, dataset_id: str) -> bool:
+        """Return True if the dataset is in RELEASED state."""
+        state = self.get_dataset_state(dataset_id)
+        return state.upper() == "RELEASED"
 
-        """
-        answer = self.api.get_dataverse(dataverse)
-        return answer.is_success
-
-    def list_dataverse_content(self, dataverse: str) -> dict:
-        """Retrieve the list of datasets and sub-dataverses contained within a specified Dataverse.
-
-        Args:
-        ----
-            dataverse (str): The alias or identifier of the Dataverse to query.
-
-        Returns:
-        -------
-            dict: A dictionary representing the JSON response from the Dataverse API,
-                  typically including datasets and nested dataverses.
-
-        Raises:
-        ------
-            HTTPError: If the API response status code is not 200 (i.e., request failed).
-
-        """
-        url = f"https://demo.dataverse.nl/api/dataverses/{dataverse}/contents"
-        headers = {"X-Dataverse-key": self.dvn_token}
-
-        request = Request("GET", url, headers=headers)
-        with Client() as client:
-            response = client.send(request)
-
-        if response.status_code in range(200, 300):
-            return response.json()
-        raise HTTPError(f"{response.status_code}, {response.reason_phrase}")
-
-    def get_dataset_info(self, data_id: str):
-        """Retrieve metadata and information for a dataset using its DOI identifier.
-
-        Args:
-        ----
-            data_id (str): The dataset identifier (excluding the 'doi:' prefix).
-
-        Returns:
-        -------
-            dict: The JSON response containing dataset metadata and details.
-
-        Raises:
-        ------
-            HTTPError: If the API response status code is not 200 (successful).
-
-        """
-        response = self.api.get_dataset(f"doi:{data_id}")
-        if response.status_code in range(200, 300):
-            return response.json()
-        raise HTTPError(f"{response.status_code}, {response.reason_phrase}")
-
-    def dataset_exists(self, data_id):
-        """Look up if data set can be found in Dataverse."""
-        response = self.api.get_dataset(f"doi:{data_id}")
-        return response.status_code in range(200, 300)
-
-    def create_dataset_with_json(self, dataverse: str, metadata: Path, verbose: bool = False):
-        """Create a new dataset from a json metadata file.
-
-        Parameters
-        ----------
-        dataverse:
-            The name of the Dataverse Collection where the dataset will be created.
-        metadata:
-            The path to a valid Dataverse Dataset metadata file.
-        verbose:
-            Print summary if True.
-
-        """
-        if dataverse is None:
+    def create_dataset_from_json(self, dataverse: str, metadata_json: str) -> Dict[str, Any]:
+        """Create a dataset using a JSON metadata string."""
+        if not dataverse:
             raise ValueError("Dataverse name must not be empty.")
+        if not metadata_json:
+            raise ValueError("Metadata JSON must not be empty.")
 
         ds = Dataset()
-        ds.from_json(read_file(str(metadata)))
-
-        if verbose:
-            print("Dataset metadata ok:", ds.validate_json())
-            print(ds.get())
+        ds.from_json(metadata_json)
 
         if not ds.validate_json():
-            raise ValueError("Something is wrong with the dataset's metadata.")
+            raise ValueError("Invalid dataset metadata JSON.")
 
-        response = self.api.create_dataset(dataverse, ds.json())
+        resp = self.api.create_dataset(dataverse, ds.json())
+        resp.raise_for_status()
+        return resp.json()
 
-        if response.status_code not in range(200, 300):
-            raise HTTPError(f"{response.status_code}, {response.reason_phrase}")
+    def delete_dataset(self, dataset_id: str) -> None:
+        """Delete the dataset with the given ID."""
+        pid = self._to_doi(dataset_id)
+        resp = self.http.delete(f"/api/datasets/:persistentId/?persistentId={pid}")
+        resp.raise_for_status()
 
-        return response
-
-    def create_dataset(self, dataverse: str, metadata: str):  # pylint: disable=R0913, R0917
-        """Create a new dataset in a specified Dataverse repository.
-
-        Parameters
-        ----------
-        dataverse:
-            The name of the Dataverse Collection where the dataset will be created.
-        metadata:
-            A minimal metadata json string.
-
-        Raises
-        ------
-                ValueError: If any of the required parameters are missing or empty
-                    (e.g., dataverse, title, subject, authors, contacts).
-                HTTPError: If the response from the API is not successful
-                    (i.e., status code is not 200).
-
-        Returns
-        -------
-            None: The function creates the dataset but does not return any value.
-
-        """
-        if dataverse is None:
-            raise ValueError("Dataverse name must not be empty.")
-        if metadata is None:
-            raise ValueError("Provide a dictionary conatining the metadata..")
-
-        ds = Dataset()
-        # ds.set(metadata)
-        ds.from_json(metadata)
-        if not ds.validate_json():
-            raise ValueError("Something is wrong with the dataset's metadata.")
-
-        response = self.api.create_dataset(dataverse, ds.json())
-
-        if response.status_code not in range(200, 300):
-            raise HTTPError(f"{response.status_code}, {response.reason_phrase}")
-
-        return response
-
-    def add_datafile_to_dataset(self, dataset_id: str, file_path: Path, verbose: bool = True):
-        """Upload a data file to a specific dataset.
-
-        Parameters
-        ----------
-        dataset_id:
-           The ID of the dataset to which the data file will be uploaded.
-        file_path:
-           The file path of the data file to be uploaded.
-        verbose:
-           If True, prints additional details for debugging. Defaults to True.
-
-        Raises
-        ------
-            HTTPError: If the response status code is not 200,
-                       an HTTPError is raised with the status code and reason.
-
-        Returns
-        -------
-            None: The function uploads the file and does not return any value.
-
-        """
-        data_metadata = {"pid": f"doi:{dataset_id}", "filename": file_path.name}
+    def add_datafile_to_dataset(
+        self,
+        dataset_id: str,
+        file_path: Path,
+        verbose: bool = False,
+    ) -> Dict[str, Any]:
+        """Upload a file to the specified dataset."""
+        metadata = {
+            "pid": self._to_doi(dataset_id),
+            "filename": file_path.name,
+        }
 
         df = Datafile()
-        df.set(data_metadata)
+        df.set(metadata)
 
         if verbose:
             print(df.get())
 
-        response = self.api.upload_datafile(f"doi:{dataset_id}", file_path, df.json())
+        resp = self.api.upload_datafile(
+            self._to_doi(dataset_id),
+            file_path,
+            df.json(),
+        )
+        resp.raise_for_status()
+        return resp.json()
 
-        if response.status_code not in range(200, 300):
-            raise HTTPError(f"{response.status_code}, {response.reason_phrase}")
+    def get_checksum_by_filename(
+        self,
+        dataset_id: str,
+        filename: str,
+    ) -> Optional[Tuple[str, str]]:
+        """Return (checksum_type, checksum_value) for a file in the dataset, or None."""
+        info = self.get_dataset_info(dataset_id)
+        files = info["data"]["latestVersion"]["files"]
 
-    def get_checksum_by_filename(self, dataset_id: str, target_label: str):
-        """Retrieve the checksum of a specific file by its label.
-
-        Parameters
-        ----------
-        dataset_id:
-            The ID of the dataset.
-        target_label:
-            The name of the file in the dataset.
-
-        Returns
-        -------
-        str or None: The checksum value if found, else None.
-
-        """
-        data_dict = self.get_dataset_info(dataset_id)
-        files = data_dict["data"]["latestVersion"]["files"]
-        for file in files:
-            if file.get("label") == target_label:
-                return (file["dataFile"]["checksum"]["type"].lower(),
-                        file["dataFile"]["checksum"]["value"])
+        for f in files:
+            if f.get("label") == filename:
+                c = f["dataFile"]["checksum"]
+                return c["type"].lower(), c["value"]
 
         return None
+
+    def get_max_upload_size(self) -> int:
+        """Return Dataverse max upload size in bytes.
+
+        If the setting is missing or the endpoint is unavailable,
+        fall back to 9 GB.
+        """
+        DEFAULT_LIMIT = 9 * 10**9  # 9 GB # noqa: N806  # pylint: disable=invalid-name
+
+        try:
+            resp = self.http.get("/api/info/settings/:MaxFileUploadSizeInBytes")
+
+            # Some Dataverse installations return 404 for this endpoint
+            if resp.status_code == 404:
+                return DEFAULT_LIMIT
+
+            resp.raise_for_status()
+
+            data = resp.json().get("data")
+            if data is None:
+                return DEFAULT_LIMIT
+
+            return int(data)
+
+        except Exception:
+            return DEFAULT_LIMIT

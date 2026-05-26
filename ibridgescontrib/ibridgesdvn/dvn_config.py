@@ -1,229 +1,219 @@
-"""Config functions."""
+"""Configuration Handler."""
 
-import argparse
 import json
-import os
-import warnings
 from pathlib import Path
-from typing import Union
-from urllib.parse import urlparse
+from typing import Dict, Optional, Tuple
 
-DVN_CONFIG_FP = Path.home() / ".dvn" / "dvn.json"
-DEMO_DVN = "https://demo.dataverse.org"
+DEMO_DVN = "https://demo.dataverse.org"  # adjust if needed
+# Default location for the Dataverse configuration file
+DVN_CONFIG_FP = Path.home() / ".ibridges" / "dataverse.json"
 
 
 class DVNConf:
-    """Interface to the dataverse config file."""
+    """Manage Dataverse configuration entries."""
 
-    def __init__(
-        self, parser: argparse.ArgumentParser, config_path: Union[str, Path] = DVN_CONFIG_FP
-    ):
-        """Read configuration file and validate it."""
-        self.config_path = config_path
+    def __init__(self, config_fp: Path, parser=None):
+        """Init."""
+        self.config_fp = Path(config_fp)
         self.parser = parser
-        if not self.config_path.is_file():
-            os.makedirs(self.config_path.parent)
-            self.reset()
-
-        try:
-            with open(self.config_path, "r", encoding="utf-8") as handle:
-                dvn_conf = json.load(handle)
-                self.dvns = dvn_conf["dvns"]
-                self.cur_dvn = dvn_conf.get("cur_dvn", DEMO_DVN)
-        except Exception as exc:  # pylint: disable=W0718
-            if isinstance(exc, FileNotFoundError):
-                print("File not found")
-                warnings.warn(f"{self.config_path} not found. Use default {DVN_CONFIG_FP}.")
-                self.reset()
-            else:
-                print(repr(exc))
-                warnings.warn(f"{self.config_path} not found. Use default {DVN_CONFIG_FP}.")
-                self.reset()
-
-        self.validate()
-
-    def validate(self):
-        """Validate the Dataverse configuration.
-
-        Check whether the types are correct, the default Dataverse URL has not been removed,
-        aliases are unique and more. If the assumptions are violated, try to reset the configuration
-        to create a working configuration file.
-        """
-        changed = False
-        try:
-            if not isinstance(self.dvns, dict):
-                raise ValueError("Dataverses list is not a dictionary.")
-            if DEMO_DVN not in self.dvns:
-                raise ValueError("Default Dataverse URL not in configuration file.")
-            if not isinstance(self.cur_dvn, str):
-                raise ValueError(
-                    f"Current Dataverse URL should be a string not {type(self.cur_dvn)}"
-                )
-            cur_aliases = set()
-            new_dvns = {}
-            for url, entry in self.dvns.items():
-                if url != DEMO_DVN and not self.is_valid_url(url):
-                    warnings.warn(f"Dataverse '{url}' is not a valid URL, " "removing the entry.")
-                    changed = True
-                elif entry.get("alias", None) in cur_aliases:
-                    warnings.warn(f"Dataverse '{url}' has a duplicate alias, " "removing...")
-                    changed = True
-                else:
-                    new_dvns[url] = entry
-                    if "alias" in entry:
-                        cur_aliases.add(entry["alias"])
-            self.dvns = new_dvns
-            if self.cur_dvn not in self.dvns:
-                warnings.warn("Current Dataverse is not available, switching to first available.")
-                self.cur_dvn = list(self.dvns)[0]
-                changed = True
-        except ValueError as exc:
-            print(exc)
-            self.reset()
-            changed = True
-        if changed:
+        self.dvns: Dict[str, dict] = {}
+        self.cur_dvn: Optional[str] = None
+        self._load()
+        # Ensure default Dataverse entry always exists
+        if DEMO_DVN not in self.dvns:
+            self.dvns[DEMO_DVN] = {}
+            self.cur_dvn = DEMO_DVN
             self.save()
 
-    def reset(self):
-        """Reset the configuration file to its defaults."""
-        self.dvns = {DEMO_DVN: {"alias": "demo"}}
-        self.cur_dvn = DEMO_DVN
-        print(self.dvns)
-        self.save()
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+
+    def _load(self):
+        if self.config_fp.exists():
+            try:
+                data = json.loads(self.config_fp.read_text(encoding="utf-8"))
+                self.dvns = data.get("dvns", {})
+                self.cur_dvn = data.get("cur_dvn")
+            except Exception:
+                self.dvns = {}
+                self.cur_dvn = None
+        else:
+            self.dvns = {}
+            self.cur_dvn = None
 
     def save(self):
-        """Save the configuration back to the configuration file."""
-        Path(self.config_path).parent.mkdir(exist_ok=True, parents=True)
-        with open(self.config_path, "w", encoding="utf-8") as handle:
-            json.dump({"cur_dvn": self.cur_dvn, "dvns": self.dvns}, handle, indent=4)
+        """Save current settings."""
+        data = {"dvns": self.dvns, "cur_dvn": self.cur_dvn}
+        self.config_fp.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
-    def get_entry(self, url_or_alias: Union[str, None] = None) -> tuple[str, dict]:
-        """Get the url and contents that belongs to a url or alias.
+    # ------------------------------------------------------------------
+    # URL / alias resolution
+    # ------------------------------------------------------------------
 
-        Parameters
-        ----------
-        url_or_alias, optional
-            Either an url or an alias, by default None in which
-            case the currently selected dataverse setting is chosen.
+    def get_entry(self, url_or_alias: str) -> Tuple[str, dict]:
+        """Resolve alias or URL → (url, entry)."""
+        # Direct URL match
+        if url_or_alias in self.dvns:
+            return url_or_alias, self.dvns[url_or_alias]
 
-        Returns
-        -------
-        url:
-            The url to the dataverse server, e.g. https://demo.dataverse.org.
-        entry:
-            Entry for the dataverse server, its alias and API token.
-
-        Raises
-        ------
-        KeyError
-            If the entry can't be found.
-
-        """
-        url_or_alias = self.cur_dvn if url_or_alias is None else url_or_alias
+        # Alias match
         for url, entry in self.dvns.items():
-            if url == str(url_or_alias):
+            if entry.get("alias") == url_or_alias:
                 return url, entry
 
-        for url, entry in self.dvns.items():
-            if entry.get("alias", None) == str(url_or_alias):
-                return url, entry
+        raise KeyError(f"No Dataverse entry found for '{url_or_alias}'.")
 
-        raise KeyError(f"Cannot find entry with name/path '{url_or_alias}'")
+    def is_valid_url(self, url: str) -> bool:
+        """Test URL."""
+        return url.startswith("http://") or url.startswith("https://")
 
-    def set_dvn(self, url_or_alias: Union[str, Path, None] = None):
-        """Change the currently selected dataverse setting.
+    # ------------------------------------------------------------------
+    # Public setters (NEW)
+    # ------------------------------------------------------------------
 
-        Parameters
-        ----------
-        url_or_alias, optional
-            Either an url or an alias, by default None
-            in which case the default dataverse will be chosen.
-
-        """
-        # Qt sends the url twice, once with value, once empty.
-        if url_or_alias == "":
-            return
-        url_or_alias = DEMO_DVN if url_or_alias is None else url_or_alias
-        try:
-            url, _ = self.get_entry(url_or_alias)
-        except KeyError as exc:
-            url = url_or_alias
-            self.dvns[url] = {}
-            if not self.is_valid_url(url):
-                if self.parser:
-                    raise self.parser.error(f"Dataverse {url} is not a valid url.")  # pylint:disable=raise-missing-from
-                raise TypeError(f"Dataverse {url} is not a valid url.") from exc
-        if self.cur_dvn != url:
-            self.cur_dvn = url
+    def set_token(self, url_or_alias: str, token: str) -> None:
+        """Set or update the token for a Dataverse entry."""
+        url, entry = self.get_entry(url_or_alias)
+        entry["token"] = token
+        self.dvns[url] = entry
         self.save()
 
-    def set_alias(self, alias: str, url: str):
-        """Set an alias for a Dataverse URL.
-
-        Parameters
-        ----------
-        alias
-            Alias to be created.
-        url
-            Url to the Dataverse instance.
-
-        """
+    def update_alias(self, url_or_alias: str, alias: str) -> None:
+        """Assign or update an alias for a Dataverse entry."""
+        # Ensure alias is not already used
         try:
-            # Alias already exists change the path
             self.get_entry(alias)
-            if self.parser:
-                self.parser.error(
-                    f"Alias '{alias}' already exists. To rename, delete the alias first."
-                )
-            raise ValueError(f"Alias '{alias}' already exists. To rename, delete the alias first.")
+            raise ValueError(f"Alias '{alias}' already exists.")
         except KeyError:
-            try:
-                # Path already exists change the alias
-                url, entry = self.get_entry(url)
-                if entry.get("alias", None) == alias:
-                    return
-                entry["alias"] = alias
-                print("Change alias for URL")
-            except KeyError:
-                # Neither exists, create a new entry
-                self.dvns[url] = {"alias": alias}
-                print(f"Created alias '{alias}'")
+            pass  # alias is free
+
+        url, entry = self.get_entry(url_or_alias)
+        entry["alias"] = alias
+        self.dvns[url] = entry
         self.save()
 
-    def delete_alias(self, alias):
-        """Delete the alias and the entry."""
-        try:
-            url, entry = self.get_entry(alias)
-        except KeyError as exc:
-            if self.parser:
-                self.parser.error(f"Cannot delete alias '{alias}'; does not exist.")
-            raise KeyError(f"Cannot delete alias '{alias}'; does not exist.") from exc
+    def add_dataverse(
+        self, url: str, alias: Optional[str] = None, token: Optional[str] = None
+    ) -> None:
+        """Create a new Dataverse configuration entry."""
+        if not self.is_valid_url(url):
+            raise ValueError(f"Invalid Dataverse URL: {url}")
+
+        if url in self.dvns:
+            raise ValueError(f"Dataverse '{url}' already exists.")
+
+        entry = {}
+        if alias:
+            # Ensure alias is unique
+            try:
+                self.get_entry(alias)
+                raise ValueError(f"Alias '{alias}' already exists.")
+            except KeyError:
+                entry["alias"] = alias
+
+        if token:
+            entry["token"] = token
+
+        self.dvns[url] = entry
+        self.save()
+
+    def delete_entry(self, url_or_alias: str) -> None:
+        """Delete a Dataverse entry entirely (except default)."""
+        url, _ = self.get_entry(url_or_alias)
 
         if url == DEMO_DVN:
-            try:
-                entry.pop("alias")
-            except KeyError as exc:
-                if self.parser:
-                    self.parser.error("Cannot remove default Dataverse from configuration.")
-                raise KeyError("Cannot remove default Dataverse from configuration.") from exc
-        else:
-            self.dvns.pop(url)
+            raise KeyError("Cannot delete the default Dataverse configuration.")
+
+        self.dvns.pop(url, None)
         self.save()
 
-    def is_valid_url(self, url):
-        """Check Url format."""
-        try:
-            result = urlparse(url)
-            return all([result.scheme, result.netloc])
-        except ValueError:
-            return False
+    # ------------------------------------------------------------------
+    # Alias deletion (your required behavior)
+    # ------------------------------------------------------------------
+
+    def delete_alias(self, alias_or_url: str) -> None:
+        """Delete the alias or full entry depending on whether it's the default DVN.
+
+        Rules:
+        - If alias_or_url refers to the default Dataverse:
+            → Only remove the alias (if present).
+        - Otherwise:
+            → Delete the entire configuration entry.
+        """
+        url, entry = self.get_entry(alias_or_url)
+
+        # Default DVN → only remove alias
+        if url == DEMO_DVN:
+            if "alias" in entry:
+                entry.pop("alias")
+                self.dvns[url] = entry
+                self.save()
+                return
+            raise KeyError("Default Dataverse has no alias to remove.")
+
+        # Non-default DVN → delete full entry
+        self.dvns.pop(url, None)
+        self.save()
+
+    # ------------------------------------------------------------------
+    # Active Dataverse
+    # ------------------------------------------------------------------
+
+    def set_dvn(self, url_or_alias: str) -> None:
+        """Set the active Dataverse."""
+        url, _ = self.get_entry(url_or_alias)
+        self.cur_dvn = url
+        self.save()
+
+    def get_token(self, url_or_alias: str) -> Optional[str]:
+        """Get token."""
+        _, entry = self.get_entry(url_or_alias)
+        return entry.get("token")
 
 
-def show_available(dvn_conf):
-    """Print available Dataverse configurations and highlight active one."""
+def show_available(dvn_conf) -> None:
+    """Print all configured Dataverse entries in a readable table."""
+    print("\nConfigured Dataverse instances:\n")
+
+    if not dvn_conf.dvns:
+        print("  (none configured)")
+        return
+
+    rows = []
+
     for url, entry in dvn_conf.dvns.items():
-        prefix = " "
-        if dvn_conf.cur_dvn in (entry.get("alias", None), url):
-            prefix = "*"
-        cur_alias = entry.get("alias", "[no alias]")
-        print(f"{prefix} {cur_alias} -> {url}")
+        alias = entry.get("alias")
+        alias_display = alias if alias else "[no alias]"
+
+        # URL validity
+        url_valid = "✓" if dvn_conf.is_valid_url(url) else "✗"
+
+        # Token validity
+        token = entry.get("token")
+        token_valid = "✓" if token else "✗"
+
+        # Minimal current marker
+        marker = "*" if dvn_conf.cur_dvn == url else " "
+
+        rows.append((marker, alias_display, url, url_valid, token_valid))
+
+    # Determine column widths
+    alias_w = max(len(r[1]) for r in rows)
+    url_w = max(len(r[2]) for r in rows)
+
+    # Header
+    print(
+        f"{' '.ljust(1)} " f"{'Alias'.ljust(alias_w)}   " f"{'URL'.ljust(url_w)}   " f"URL   Token"
+    )
+    print("-" * (alias_w + url_w + 25))
+
+    # Rows
+    for marker, alias_display, url, url_valid, token_valid in rows:
+        print(
+            f"{marker} {alias_display.ljust(alias_w)}   "
+            f"{url.ljust(url_w)}   "
+            f"{url_valid}        {token_valid}"
+        )
+
+    print()

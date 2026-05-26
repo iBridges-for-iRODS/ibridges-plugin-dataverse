@@ -1,14 +1,14 @@
-"""Main plugin file to show info."""
+"""Manage Dataverse aliases."""
 
 import argparse
 
 from ibridges.cli.base import BaseCliCommand
 
-from ibridgescontrib.ibridgesdvn.dvn_config import DVNConf, show_available
+from ibridgescontrib.ibridgesdvn.dvn_config import DVN_CONFIG_FP, DVNConf, show_available
 
 
 class CliDvnAlias(BaseCliCommand):
-    """Subcommand to get information from the server."""
+    """Create, delete, or list Dataverse aliases."""
 
     names = ["dv-setup"]
     description = "Print existing Dataverse configurations or create new ones."
@@ -18,41 +18,45 @@ class CliDvnAlias(BaseCliCommand):
     def _mod_parser(cls, parser):
         parser.add_argument(
             "alias",
-            help="The new alias to be created",
+            help="Alias to create or delete",
             type=str,
-            default=None,
             nargs="?",
+            default=None,
         )
         parser.add_argument(
-            "url", help="URL to the dataverse instance", type=str, default=None, nargs="?"
+            "url",
+            help="URL of the Dataverse instance",
+            type=str,
+            nargs="?",
+            default=None,
         )
         parser.add_argument(
             "--delete",
             "-d",
-            help="Delete the alias.",
+            help="Delete the alias instead of creating it",
             action="store_true",
         )
         return parser
 
     @staticmethod
     def run_shell(session, parser, args):
-        """Run alias command not available in the shell."""
-        raise NotImplementedError()
+        """Command."""
+        raise NotImplementedError("dv-setup is not available in the iBridges shell.")
+
 
     @classmethod
     def run_command(cls, args):
-        """Create and manage aliases in the CLI."""
+        """Create, delete, or list Dataverse aliases."""
         parser = cls.get_parser(argparse.ArgumentParser)
-        dvn_conf = DVNConf(parser)
+        dvn_conf = DVNConf(DVN_CONFIG_FP, parser)
 
-        # Show available and selected aliases.
-        if args.alias is None:
+        if not (args.url or args.alias or args.delete):
             show_available(dvn_conf)
             return
 
-        # Delete alias
         if args.delete:
             dvn_conf.delete_alias(args.alias)
+            show_available(dvn_conf)
             return
 
         if args.url is None:
@@ -61,5 +65,9 @@ class CliDvnAlias(BaseCliCommand):
         if not dvn_conf.is_valid_url(args.url):
             parser.error(f"Supplied URL '{args.url}' is not a valid URL.")
 
-        dvn_conf.set_alias(args.alias, args.url)
+        if args.url in dvn_conf.dvns:
+            dvn_conf.update_alias(args.url, args.alias)
+        else:
+            dvn_conf.add_dataverse(args.url, alias=args.alias)
+
         show_available(dvn_conf)

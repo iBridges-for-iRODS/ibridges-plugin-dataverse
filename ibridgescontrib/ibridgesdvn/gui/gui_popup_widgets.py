@@ -14,6 +14,7 @@ from ibridgescontrib.ibridgesdvn.ds_meta import (
     is_valid_email,
     is_valid_name,
 )
+from ibridgescontrib.ibridgesdvn.dvn_operations import DvnOperations
 from ibridgescontrib.ibridgesdvn.gui.uiCreateDataset import Ui_Dialog as ui_create_dataset
 from ibridgescontrib.ibridgesdvn.gui.uiCreateMetadata import Ui_Dialog as ui_create_metadata
 from ibridgescontrib.ibridgesdvn.gui.uiCreateUrl import Ui_Dialog as ui_create_url
@@ -23,81 +24,115 @@ class CreateDataset(PySide6.QtWidgets.QDialog, ui_create_dataset):
     """Popup window to create a new dataset."""
 
     def __init__(self, dvn_api, return_label):
-        """Init window."""
+        """Init."""
         super().__init__()
         super().setupUi(self)
+
         self.dvn_api = dvn_api
+        self.return_label = return_label
+
         self.setWindowTitle("Create new Dataset.")
         self.setWindowFlags(PySide6.QtCore.Qt.WindowType.WindowStaysOnTopHint)
+
+        # Connect signals
         self.ok_button.clicked.connect(self.create)
         self.cancel_button.clicked.connect(self.close)
         self.load_json_button.clicked.connect(self.select_meta_file)
         self.create_json_button.clicked.connect(self.create_meta)
-        self.return_label = return_label
+
+    # ------------------------------------------------------------------
+    # UI helpers
+    # ------------------------------------------------------------------
 
     def close(self):
         """Close widget."""
         self.done(0)
 
+    def _set_error(self, msg):
+        self.error_label.setText(msg)
+
+    def _get_metadata_json(self):
+        """Return metadata JSON string or None."""
+        if self.json_file_label.text():
+            try:
+                return read_file(self.json_file_label.text())
+            except Exception as err:
+                self._set_error(f"Could not read JSON file: {err}")
+                return None
+
+        text = self.meta_browser.toPlainText().strip()
+        return text if text else None
+
+    # ------------------------------------------------------------------
+    # Main create logic
+    # ------------------------------------------------------------------
+
     def create(self):
-        """Create new Dataverse configuration."""
-        dv = self.dv_edit.text()
-        if dv == "":
-            self.error_label.setText("Please provide a Dataverse collection.")
+        """Create dataverse dataset."""
+        dv = self.dv_edit.text().strip()
+        if not dv:
+            self._set_error("Please provide a Dataverse collection.")
             return
-        if self.json_file_label.text() == "" and self.meta_browser.toPlainText() == "":
-            self.error_label.setText("Please choose a metadata json file or create metadata.")
+
+        metadata_json = self._get_metadata_json()
+        if not metadata_json:
+            self._set_error("Please choose a metadata JSON file or create metadata.")
             return
+
+        # Validate dataverse exists
         try:
             if not self.dvn_api.dataverse_exists(dv):
-                self.error_label.setText(f"Could not find {dv}.")
+                self._set_error(f"Could not find {dv}.")
                 return
         except ApiAuthorizationError:
-            self.error_label.setText(
-                    f"Authorization Error, token invalid for {self.dvn_api.dvn_url}.")
+            self._set_error(f"Authorization Error: token invalid for {self.dvn_api.url}.")
             return
 
-        if self.json_file_label.text() != "":
-            meta_json = self.json_file_label.text()
-            try:
-                response = self.dvn_api.create_dataset_with_json(dv, meta_json)
-                try:
-                    doi = response.json()["data"]["persistentId"].split(":")[1]
-                    self.return_label.setText(doi)
-                    self.done(0)
-                except KeyError:
-                    self.error_label.setText(f"ERROR: Could not create Dataset. {str(response)}")
-            except ApiAuthorizationError as err:
-                self.error_label.setText(f"ERROR: Could not create Dataset. {repr(err)}")
-        elif self.meta_browser.toPlainText() != "":
-            try:
-                response = self.dvn_api.create_dataset(dv, self.meta_browser.toPlainText())
-                try:
-                    doi = response.json()["data"]["persistentId"].split(":")[1]
-                    self.return_label.setText(doi)
-                    self.done(0)
-                except KeyError:
-                    self.error_label.setText(f"ERROR: Could not create Dataset. {str(response)}")
-            except ApiAuthorizationError as err:
-                self.error_label.setText(f"ERROR: Could not create Dataset. {repr(err)}")
-        else:
-            self.error_label.setText("Please provide some dataset metadata.")
+        # Create dataset
+        try:
+            response = self.dvn_api.create_dataset_from_json(dv, metadata_json)
+            data = response.get("data", {})
+            pid = data.get("persistentId")
+
+            if not pid:
+                self._set_error(f"ERROR: Could not create Dataset. {response}")
+                return
+
+            doi = pid.split(":")[1]
+            ops = DvnOperations()
+            ops.register_created_dataset(self.dvn_api.url, pid)
+            self.return_label.setText(doi)
+            self.done(0)
+
+        except ApiAuthorizationError as err:
+            self._set_error(f"ERROR: Could not create Dataset. {repr(err)}")
+
+    # ------------------------------------------------------------------
+    # Metadata file selection
+    # ------------------------------------------------------------------
 
     def select_meta_file(self):
-        """Open file selector."""
+        """Fileselector for json."""
         select_file, _ = QFileDialog.getOpenFileName(
             self,
             "Select JSON file",
-            str(Path("~").expanduser()),  # directory (3rd positional argument)
-            "JSON Files (*.json);;All Files (*)",  # file filter (4th positional argument)
+            str(Path("~").expanduser()),
+            "JSON Files (*.json);;All Files (*)",
         )
 
-        self.json_file_label.setText(str(select_file))
-        if self.json_file_label.text() != "":
-            self.meta_browser.setText(read_file(str(select_file)))
+        if select_file:
+            self.json_file_label.setText(select_file)
+            try:
+                self.meta_browser.setText(read_file(select_file))
+            except Exception as err:
+                self._set_error(f"Could not read file: {err}")
+
+    # ------------------------------------------------------------------
+    # Metadata creation popup
+    # ------------------------------------------------------------------
 
     def create_meta(self):
-        """Open pop up to fetch minimal metadata."""
+        """Create metadata."""
         self.json_file_label.clear()
         self.meta_browser.clear()
         meta_widget = CreateMetadata(self.meta_browser)
@@ -142,11 +177,11 @@ class CreateMetadata(PySide6.QtWidgets.QDialog, ui_create_metadata):
         text = self.json_edit.toPlainText()
 
         if text == "":
-            self.error_label("No metadata provided.")
+            self.error_label.setText("No metadata provided.")
             return
 
         try:
-            json_string = build_metadata(json.loads(text))
+            json_string = json.dumps(build_metadata(json.loads(text)), indent=2)
             self.metadata_field.setText(json_string)
             self.close()
         except json.JSONDecodeError as e:
@@ -284,6 +319,7 @@ class CreateDvnURL(PySide6.QtWidgets.QDialog, ui_create_url):
         self.ok_button.clicked.connect(self.create)
         self.cancel_button.clicked.connect(self.close)
         self.dvn_conf = dvn_conf
+        self.error_label.setWordWrap(True)
 
     def close(self):
         """Close widget."""
@@ -291,31 +327,48 @@ class CreateDvnURL(PySide6.QtWidgets.QDialog, ui_create_url):
 
     def create(self):
         """Create new Dataverse configuration."""
-        url = self.url_edit.text()
-        token = self.token_edit.text()
-        alias = self.alias_edit.text()
+        self.error_label.clear()
+        url = self.url_edit.text().strip()
+        token = self.token_edit.text().strip()
+        alias = self.alias_edit.text().strip()
 
-        check = self._input_is_invalid(url, token)
-        if check is False:
-            self.dvn_conf.set_dvn(url)
+        # Validate input
+        error = self._input_is_invalid(url, token)
+        if error:
+            self.error_label.setText(error)
+            return
+
+        # 1. Ensure URL entry exists (create if missing)
+        try:
+            # URL already exists → get it
+            existing_url, entry = self.dvn_conf.get_entry(url)
+        except KeyError:
+            # URL does not exist → create new entry
             try:
-                _, entry = self.dvn_conf.get_entry()
-                entry["token"] = token
-            except:  # pylint: disable=W0702 # noqa: E722
-                entry = {}
-                entry["token"] = token
+                self.dvn_conf.add_dataverse(url, alias=None)
+            except ValueError as exc:
+                self.error_label.setText(str(exc))
+                return
+            existing_url, entry = self.dvn_conf.get_entry(url)
 
-            if alias:
-                entry["alias"] = alias
-            self.dvn_conf.dvns[url] = entry
-            self.dvn_conf.save()
-            self.done(0)
-        else:
-            self.error_label.setText(check)
+        # 2. If alias provided → assign/update alias
+        if alias:
+            try:
+                self.dvn_conf.update_alias(existing_url, alias)
+            except ValueError as exc:
+                self.error_label.setText(str(exc))
+                return
+
+        # 3. Store token
+        self.dvn_conf.set_token(existing_url, token)
+
+        # Close dialog
+        self.done(0)
 
     def _input_is_invalid(self, url, token):
         if url == "" or not self.dvn_conf.is_valid_url(url):
             return "Please provide a valid URL."
         if token == "":
             return "Please provide a token."
-        return False
+
+        return None
