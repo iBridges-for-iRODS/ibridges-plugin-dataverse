@@ -7,8 +7,7 @@ from ibridges import IrodsPath, Session, download
 
 from ibridgescontrib.ibridgesdvn.dataverse import Dataverse
 from ibridgescontrib.ibridgesdvn.dvn_operations import DvnOperations
-from ibridgescontrib.ibridgesdvn.utils import calculate_checksum, create_unique_filename
-
+from ibridgescontrib.ibridgesdvn.utils import calculate_checksum, create_unique_filename, ensure_connection
 
 class TransferDataThread(PySide6.QtCore.QThread):
     """Transfer data between local and iRODS."""
@@ -50,7 +49,7 @@ class TransferDataThread(PySide6.QtCore.QThread):
         # Get paths from DvnOperations without passing URL again
         self.irods_paths = [
             IrodsPath(self.thread_session, ip)
-            for ip in self.dvn_ops.get_paths(self.dataset_id)
+            for ip in self.dvn_ops.get_paths(self.dvn_url, self.dataset_id)
         ]
 
         # Separate Dataverse client for upload/checksum
@@ -110,7 +109,7 @@ class TransferDataThread(PySide6.QtCore.QThread):
                             file_count += 1
 
                     # Remove from pending list via DvnOperations (no URL needed)
-                    self.dvn_ops.rm_file(self.dataset_id, str(irods_path))
+                    self.dvn_ops.rm_file(self.dvn_url, self.dataset_id, str(irods_path))
                     local_path.unlink()
 
                 except Exception as err:  # pylint: disable=W0718

@@ -15,7 +15,6 @@ import PySide6.QtCore
 from ibridges import IrodsPath
 from ibridges.session import Session
 from ibridgesgui.config import get_last_ienv_path
-from ibridgesgui.gui_utils import populate_table
 from ibridgesgui.irods_tree_model import IrodsTreeModel
 
 from ibridgescontrib.ibridgesdvn.dvn_config import DVNConf, DVN_CONFIG_FP
@@ -51,6 +50,11 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
         self.transfer_thread = None
 
         self.error_label.setWordWrap(True)
+        
+        header = self.selected_data_table.horizontalHeader()
+        header.setSectionResizeMode(0, PySide6.QtWidgets.QHeaderView.Stretch) 
+        header.setSectionResizeMode(1, PySide6.QtWidgets.QHeaderView.ResizeToContents)
+        self.selected_data_table.setSizePolicy(PySide6.QtWidgets.QSizePolicy.Expanding, PySide6.QtWidgets.QSizePolicy.Expanding)
    
         self.init_tab()
 
@@ -173,7 +177,7 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
     def dv_create_ds(self):
         self.error_label.clear()
 
-        if not self.dvn_ops.connected:
+        if not self.dvn_api:
             self.error_label.setText("Not connected to Dataverse.")
             return
 
@@ -192,17 +196,18 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
         self.error_label.clear()
         dataset_id = self.dv_ds_edit.text().strip()
 
-        if not dataset_id:
-            self.error_label.setText("Enter a valid Dataset Identifier.")
-            return
-        if not self.dvn_ops.connected:
+        if not self.dvn_api:
             self.error_label.setText("Not connected to Dataverse.")
+            return
+
+        if not dataset_id or not self.dvn_api.dataset_exists(dataset_id):
+            self.error_label.setText("Enter a valid Dataset Identifier.")
             return
 
         rows = {idx.row() for idx in self.selected_data_table.selectedIndexes()}
         for row in rows:
             path = self.selected_data_table.item(row, 0).text()
-            self.dvn_ops.rm_file(dataset_id, path)
+            self.dvn_ops.rm_file(self.url, dataset_id, path)
 
         self._populate_selected_data_table()
 
@@ -214,15 +219,13 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
         self.error_label.clear()
         dataset_id = self.dv_ds_edit.text().strip()
 
-        if not dataset_id:
-            self.error_label.setText("Select a dataset and refresh table.")
-            return
-        if not self.dvn_ops.connected:
+        if not self.dvn_api:
             self.error_label.setText("Not connected to Dataverse.")
             return
-        if not self.dvn_ops.dataset_exists(dataset_id):
-            self.error_label.setText("Dataset does not exist (any longer).")
+        if not dataset_id or not self.dvn_api.dataset_exists(dataset_id):
+            self.error_label.setText("Enter a valid Dataset Identifier.")
             return
+
         if self.selected_data_table.rowCount() == 0:
             self.error_label.setText("Please add some data from the iRODS tree.")
             return
@@ -301,7 +304,7 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
     def dv_add_file(self):
         self.error_label.clear()
 
-        if not self.dvn_ops.connected:
+        if not self.dvn_api:
             self.error_label.setText("Not connected to Dataverse.")
             return
 
@@ -311,7 +314,7 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
             return
 
         dataset_id = self.dv_ds_edit.text().strip()
-        if not dataset_id:
+        if not dataset_id or not self.dvn_api.dataset_exists(dataset_id):
             self.error_label.setText("Enter a valid Dataset Identifier.")
             return
 
@@ -325,7 +328,7 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
                         f"{irods_path} too large: size {irods_path.size} > {9 * 10**9}"
                     )
                 else:
-                    self.dvn_ops.add_file(dataset_id, str(irods_path))
+                    self.dvn_ops.add_file(self.url, dataset_id, str(irods_path))
             else:
                 self.error_label.setText("Please only select data objects.")
 
@@ -361,7 +364,10 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
 
     def dataset_edit_action(self):
         self.error_label.clear()
+        self._enable_buttons(True)
+        dataset_id = self.dv_ds_edit.text().strip()
         self._populate_selected_data_table()
+
 
     def _populate_selected_data_table(self):
         self.add_selected_button.setEnabled(True)
@@ -371,19 +377,41 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
         if not dataset_id:
             self.error_label.setText("Enter a valid Dataset Identifier.")
             return
-        if not self.dvn_ops.connected:
-            self.error_label.setText("Not connected to Dataverse.")
+        if not self.dvn_api:
+            self.error_label.setText(
+                    "Not connected to Dataverse. Check Dataverse URL and Configuration.")
             return
-        if not self.dvn_ops.dataset_exists(dataset_id):
+        if not self.dvn_api.dataset_exists(dataset_id):
             self.error_label.setText("Dataset does not exist (any longer).")
             return
 
-        paths = self.dvn_ops.get_paths(dataset_id)
+        paths = self.dvn_ops.get_paths(self.url, dataset_id)
         if not paths:
             return
+        
+        try:
+            current_paths = [
+                (IrodsPath(self.session, path), IrodsPath(self.session, path).size)
+                for path in paths
+            ]
+        except FileNotFoundError as err:
+            self.error_label.setText(f"Cannot load staged file: {err}")
+            self.add_selected_button.setEnabled(False)
+            self.check_checksum_box.setEnabled(False)
+            self.delete_selected_button.setEnabled(False)
+            self.dv_push_button.setEnabled(False)
+            return
 
-        current_paths = [
-            (IrodsPath(self.session, path), IrodsPath(self.session, path).size)
-            for path in paths
-        ]
-        populate_table(self.selected_data_table, len(current_paths), current_paths)
+        self.selected_data_table.clearContents()
+        self.selected_data_table.setRowCount(len(current_paths))
+        
+        for row, (irods_path, size) in enumerate(current_paths):
+            # Column 0: full path (long single word)
+            item_path = PySide6.QtWidgets.QTableWidgetItem(str(irods_path))
+            item_path.setToolTip(str(irods_path))
+            self.selected_data_table.setItem(row, 0, item_path)
+        
+            # Column 1: file size
+            item_size = PySide6.QtWidgets.QTableWidgetItem(str(size))
+            #item_size.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            self.selected_data_table.setItem(row, 1, item_size)
