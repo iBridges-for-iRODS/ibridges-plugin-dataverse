@@ -183,7 +183,7 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
             self.error_label.setText("Not connected to Dataverse.")
             return
 
-        widget = CreateDataset(self.dvn_ops, self.dv_ds_edit)
+        widget = CreateDataset(self.dvn_api, self.dv_ds_edit)
         widget.exec()
 
         doi = self.dv_ds_edit.text().strip()

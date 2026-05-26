@@ -40,7 +40,7 @@ class CreateDataset(PySide6.QtWidgets.QDialog, ui_create_dataset):
         self.done(0)
 
     def create(self):
-        """Create new Dataverse configuration."""
+        """Create new Dataset."""
         dv = self.dv_edit.text()
         if dv == "":
             self.error_label.setText("Please provide a Dataverse collection.")
@@ -58,11 +58,12 @@ class CreateDataset(PySide6.QtWidgets.QDialog, ui_create_dataset):
             return
 
         if self.json_file_label.text() != "":
-            meta_json = self.json_file_label.text()
+            metajson = Path(self.json_file_label.text())
             try:
-                response = self.dvn_api.create_dataset_with_json(dv, meta_json)
+                metadata_json = metajson.read_text(encoding="utf-8")
+                response = self.dvn_api.create_dataset_from_json(dv, metadata_json)
                 try:
-                    doi = response.json()["data"]["persistentId"].split(":")[1]
+                    doi = response["data"]["persistentId"].split(":")[1]
                     self.return_label.setText(doi)
                     self.done(0)
                 except KeyError:
@@ -71,9 +72,10 @@ class CreateDataset(PySide6.QtWidgets.QDialog, ui_create_dataset):
                 self.error_label.setText(f"ERROR: Could not create Dataset. {repr(err)}")
         elif self.meta_browser.toPlainText() != "":
             try:
-                response = self.dvn_api.create_dataset(dv, self.meta_browser.toPlainText())
+                metadata_json = self.meta_browser.toPlainText()
+                response = self.dvn_api.create_dataset_from_json(dv, metadata_json)
                 try:
-                    doi = response.json()["data"]["persistentId"].split(":")[1]
+                    doi = response["data"]["persistentId"].split(":")[1]
                     self.return_label.setText(doi)
                     self.done(0)
                 except KeyError:
@@ -142,11 +144,11 @@ class CreateMetadata(PySide6.QtWidgets.QDialog, ui_create_metadata):
         text = self.json_edit.toPlainText()
 
         if text == "":
-            self.error_label("No metadata provided.")
+            self.error_label.setText("No metadata provided.")
             return
 
         try:
-            json_string = build_metadata(json.loads(text))
+            json_string = json.dumps(build_metadata(json.loads(text)), indent=2)
             self.metadata_field.setText(json_string)
             self.close()
         except json.JSONDecodeError as e:
@@ -292,6 +294,7 @@ class CreateDvnURL(PySide6.QtWidgets.QDialog, ui_create_url):
 
     def create(self):
         """Create new Dataverse configuration."""
+        self.error_label.clear()
         url = self.url_edit.text()
         token = self.token_edit.text()
         alias = self.alias_edit.text()
@@ -317,6 +320,7 @@ class CreateDvnURL(PySide6.QtWidgets.QDialog, ui_create_url):
             # New entry
             entry = {}
         
+        entry["token"] = token
         self.dvn_conf.dvns[url] = entry
         self.dvn_conf.save()
         self.done(0)
