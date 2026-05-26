@@ -99,7 +99,7 @@ class CliDvnSwitch(BaseCliCommand):
     def run_command(cls, args):
         """Switch to an existing Dataverse configuration."""
         parser = cls.get_parser(argparse.ArgumentParser)
-        dvn_conf = DVNConf(parser)
+        dvn_conf = DVNConf(DVN_CONFIG_FP, parser)
 
         dvn_conf.set_dvn(args.url_or_alias)
         show_available(dvn_conf)

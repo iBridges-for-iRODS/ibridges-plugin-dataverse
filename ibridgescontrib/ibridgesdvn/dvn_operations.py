@@ -12,9 +12,9 @@ import shutil
 
 from ibridges import IrodsPath, download
 
-from .dataverse import Dataverse
-from .dvn_config import DVNConf
-from .utils import calculate_checksum, create_unique_filename
+from ibridgescontrib.ibridgesdvn.dataverse import Dataverse
+from ibridgescontrib.ibridgesdvn.dvn_config import DVNConf, DVN_CONFIG_FP
+from ibridgescontrib.ibridgesdvn.utils import calculate_checksum, create_unique_filename
 
 
 DVN_OPS_PATH = Path.home() / ".dvn" / "dvn_active_ops_log.json"
@@ -43,6 +43,37 @@ class DvnOperations:
         self._validate_structure()
         self._auto_cleanup()
 
+
+    def _validate_dv(self, dv_url: str, parser=None):
+        """Validate that the Dataverse URL exists, is reachable, and has a valid token."""
+    
+        dvn_conf = DVNConf(DVN_CONFIG_FP, parser)
+        try:
+            url, entry = dvn_conf.get_entry(dv_url)
+        except KeyError:
+            raise RuntimeError(f"No Dataverse configuration found for '{dv_url}'.")
+    
+        if not dvn_conf.is_valid_url(url):
+            raise RuntimeError(f"Invalid Dataverse URL: {url}")
+    
+        token = entry.get("token")
+        if not token:
+            raise RuntimeError(f"No API token configured for {url}. Use 'dv-init' first.")
+    
+        import httpx
+        try:
+            resp = httpx.get(
+                f"{url}/api/users/:me",
+                headers={"X-Dataverse-key": token},
+                timeout=3.0,
+            )
+            if resp.status_code != 200:
+                raise RuntimeError(f"Invalid API token for {url}. Use 'dv-init' to set a valid token.")
+        except Exception:
+            raise RuntimeError(f"Dataverse at {url} is unreachable.")
+    
+        return url, token
+    
 
     def _read_ops_log(self) -> Dict[str, dict]:
         try:
@@ -76,9 +107,11 @@ class DvnOperations:
                 raise ValueError(f"'created_datasets' for {dv_url} must be a list.")
 
     def _auto_cleanup(self) -> None:
-        """Automatically remove dataset entries with no pending paths."""
+        """Automatically remove empty upload entries and orphaned structures."""
         changed = False
+    
         for dv_url, dv_ops in self.ops.items():
+            # 1. Remove add_file entries with no paths
             before = len(dv_ops["add_file"])
             dv_ops["add_file"] = [
                 entry for entry in dv_ops["add_file"]
@@ -86,10 +119,45 @@ class DvnOperations:
             ]
             if len(dv_ops["add_file"]) != before:
                 changed = True
-
+    
+            # 2. Remove duplicate dataset IDs in created_datasets
+            before = len(dv_ops["created_datasets"])
+            dv_ops["created_datasets"] = list(sorted(set(dv_ops["created_datasets"])))
+            if len(dv_ops["created_datasets"]) != before:
+                changed = True
+    
         if changed:
             self._save()
 
+    def clean_up_datasets(self, dv_url: str, parser=None) -> None:
+        """Manually trigger full cleanup including Dataverse checks."""
+        api = self._get_api(dv_url, parser)
+        dv_ops = self._ensure_dv_entry(dv_url)
+    
+        cleaned = []
+        for ds in dv_ops.get("created_datasets", []):
+            try:
+                if api.dataset_exists(ds) and not api.is_dataset_published(ds):
+                    cleaned.append(ds)
+            except Exception:
+                cleaned.append(ds)
+        dv_ops["created_datasets"] = cleaned
+    
+        cleaned_add = []
+        for entry in dv_ops.get("add_file", []):
+            ds = entry.get("dataset")
+            try:
+                if api.dataset_exists(ds):
+                    cleaned_add.append(entry)
+            except Exception:
+                pass
+        dv_ops["add_file"] = cleaned_add
+    
+        self._auto_cleanup()
+    
+        self._save()
+
+    
     def _ensure_dv_entry(self, dv_url: str) -> Dict[str, list]:
         if dv_url not in self.ops:
             self.ops[dv_url] = {"add_file": [], "created_datasets": []}
@@ -111,9 +179,8 @@ class DvnOperations:
 
     def _get_api(self, dv_url: str, parser=None) -> Dataverse:
         """Build a Dataverse API client from config."""
-        dvn_conf = DVNConf(parser) if parser is not None else DVNConf()
-        token = dvn_conf.get_entry(dv_url)[1]["token"]
-        return Dataverse(dv_url, token)
+        url, token = self._validate_dv(dv_url, parser)
+        return Dataverse(url, token)
 
     def _file_too_large(self, api: Dataverse, size: int) -> bool:
         """Return True if size exceeds Dataverse max upload size."""
