@@ -1,24 +1,20 @@
-"""
-Dataverse GUI tab for iBridges.
-Updated to use the new DvnOperations backend (Option A connection model).
-"""
+"""Dataverse GUI tab for iBridges."""
 
 import logging
 import shutil
-import httpx
 from pathlib import Path
 
-import PySide6.QtWidgets
-import PySide6.QtGui
+import httpx
 import PySide6.QtCore
-
+import PySide6.QtGui
+import PySide6.QtWidgets
 from ibridges import IrodsPath
 from ibridges.session import Session
 from ibridgesgui.config import get_last_ienv_path
 from ibridgesgui.irods_tree_model import IrodsTreeModel
 
-from ibridgescontrib.ibridgesdvn.dvn_config import DVNConf, DVN_CONFIG_FP
-from ibridgescontrib.ibridgesdvn.dvn_operations import DvnOperations, DVN_OPS_PATH, TEMP_DIR
+from ibridgescontrib.ibridgesdvn.dvn_config import DVN_CONFIG_FP, DVNConf
+from ibridgescontrib.ibridgesdvn.dvn_operations import DVN_OPS_PATH, TEMP_DIR, DvnOperations
 from ibridgescontrib.ibridgesdvn.gui.gui_popup_widgets import CreateDataset, CreateDvnURL
 from ibridgescontrib.ibridgesdvn.gui.gui_thread import TransferDataThread
 from ibridgescontrib.ibridgesdvn.gui.uiDataverse import Ui_Form
@@ -31,6 +27,7 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
     name = "Dataverse"
 
     def __init__(self, session: Session, app_name: str, logger: logging.Logger):
+        """Init."""
         super().__init__()
         super().setupUi(self)
 
@@ -51,18 +48,20 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
         self.transfer_thread = None
 
         self.error_label.setWordWrap(True)
-        
+
         header = self.selected_data_table.horizontalHeader()
-        header.setSectionResizeMode(0, PySide6.QtWidgets.QHeaderView.Stretch) 
+        header.setSectionResizeMode(0, PySide6.QtWidgets.QHeaderView.Stretch)
         header.setSectionResizeMode(1, PySide6.QtWidgets.QHeaderView.ResizeToContents)
-        self.selected_data_table.setSizePolicy(PySide6.QtWidgets.QSizePolicy.Expanding, PySide6.QtWidgets.QSizePolicy.Expanding)
-   
+        self.selected_data_table.setSizePolicy(
+            PySide6.QtWidgets.QSizePolicy.Expanding, PySide6.QtWidgets.QSizePolicy.Expanding
+        )
+
         self.init_tab()
 
     def init_tab(self):
+        """Initialise gui elelemnts."""
         self.load_dataverse_conf()
         self.dv_url_select_box.currentTextChanged.connect(self._connect_to_dataverse)
-
 
         self.add_url_button.clicked.connect(self.add_dv_url)
         self.delete_url_button.clicked.connect(self.delete_dv_url)
@@ -78,18 +77,17 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
         self._init_irods_tree()
         self._connect_to_dataverse()
 
-
     def load_dataverse_conf(self):
         """Load Dataverse configurations with validation (same logic as CLI)."""
         self.dv_url_select_box.clear()
-    
+
         items = []
-    
+
         for url, entry in self.dvn_conf.dvns.items():
             alias = entry.get("alias")
             alias_display = alias if alias else "[no alias]"
             token = entry.get("token")
-    
+
             # --- URL validation ---
             try:
                 resp = httpx.get(f"{url}/api/info/version", timeout=3.0)
@@ -99,7 +97,7 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
                     url_status = "invalid dataverse"
             except Exception:
                 url_status = "unreachable"
-    
+
             # --- Token validation ---
             if token and url_status == "dataverse OK":
                 try:
@@ -113,16 +111,16 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
                     token_status = "token invalid"
             else:
                 token_status = "no token" if not token else "token invalid"
-    
+
             # --- Build display label (NO marker) ---
             label = f"{alias_display}  →  {url}  [{url_status}, {token_status}]"
-    
+
             items.append((label, url))
-    
+
         # Populate dropdown
         for label, url in items:
             self.dv_url_select_box.addItem(label, userData=url)
-    
+
         # Auto-select the current Dataverse
         if self.dvn_conf.cur_dvn:
             for i in range(self.dv_url_select_box.count()):
@@ -130,32 +128,32 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
                     self.dv_url_select_box.setCurrentIndex(i)
                     break
 
-
     def _connect_to_dataverse(self):
         """Connect GUI to Dataverse using the stored URL (not the label)."""
         self.error_label.clear()
-    
+
         self.url = self.dv_url_select_box.currentData()
-    
+
         if not self.url:
             self.error_label.setText("Please create a Dataverse configuration.")
             return
 
         # test dataverse connection with url and stored token
-        state, dvn_api, error =  ensure_connection(self.dvn_conf, self.url)
+        state, dvn_api, error = ensure_connection(self.dvn_conf, self.url)
 
         if error:
             self.error_label.setText(f"Invalid Dataverse connection: {error}")
             return
-    
+
         # store last used params
         self.dvn_api = dvn_api
         self.dvn_conf.set_dvn(self.url)
-        
+
         # clear possible clutter in ds field
         self.dv_ds_edit.clear()
-    
+
     def add_dv_url(self):
+        """Add new dvn configuration."""
         self.error_label.clear()
         url_widget = CreateDvnURL(self.dvn_conf)
         url_widget.exec()
@@ -165,11 +163,11 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
         """Remove a Dataverse configuration."""
         # Get the actual URL stored in userData
         cur_url = self.dv_url_select_box.currentData()
-    
+
         if not cur_url:
             self.error_label.setText("No Dataverse selected.")
             return
-        try: 
+        try:
             self.dvn_conf.delete_alias(cur_url)
         except KeyError as exc:
             self.logger.info("DATAVERSE: %s", exc)
@@ -180,6 +178,7 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
     # ------------------------------------------------------------------
 
     def dv_create_ds(self):
+        """Create a new dataset."""
         self.error_label.clear()
 
         if not self.dvn_api:
@@ -198,6 +197,7 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
     # ------------------------------------------------------------------
 
     def dv_rm_file(self):
+        """Unstage a file."""
         self.error_label.clear()
         dataset_id = self.dv_ds_edit.text().strip()
 
@@ -221,6 +221,7 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
     # ------------------------------------------------------------------
 
     def dv_push(self):
+        """Upload staged files to dataset."""
         self.error_label.clear()
         dataset_id = self.dv_ds_edit.text().strip()
 
@@ -307,6 +308,7 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
     # ------------------------------------------------------------------
 
     def dv_add_file(self):
+        """Stage files."""
         self.error_label.clear()
 
         if not self.dvn_api:
@@ -368,11 +370,10 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
     # ------------------------------------------------------------------
 
     def dataset_edit_action(self):
+        """Update dataset info in table."""
         self.error_label.clear()
         self._enable_buttons(True)
-        dataset_id = self.dv_ds_edit.text().strip()
         self._populate_selected_data_table()
-
 
     def _populate_selected_data_table(self):
         self.add_selected_button.setEnabled(True)
@@ -384,7 +385,8 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
             return
         if not self.dvn_api:
             self.error_label.setText(
-                    "Not connected to Dataverse. Check Dataverse URL and Configuration.")
+                "Not connected to Dataverse. Check Dataverse URL and Configuration."
+            )
             return
         if not self.dvn_api.dataset_exists(dataset_id):
             self.error_label.setText("Dataset does not exist (any longer).")
@@ -393,7 +395,7 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
         paths = self.dvn_ops.get_paths(self.url, dataset_id)
         if not paths:
             return
-        
+
         try:
             current_paths = [
                 (IrodsPath(self.session, path), IrodsPath(self.session, path).size)
@@ -409,14 +411,14 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
 
         self.selected_data_table.clearContents()
         self.selected_data_table.setRowCount(len(current_paths))
-        
+
         for row, (irods_path, size) in enumerate(current_paths):
             # Column 0: full path (long single word)
             item_path = PySide6.QtWidgets.QTableWidgetItem(str(irods_path))
             item_path.setToolTip(str(irods_path))
             self.selected_data_table.setItem(row, 0, item_path)
-        
+
             # Column 1: file size
             item_size = PySide6.QtWidgets.QTableWidgetItem(str(size))
-            #item_size.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            # item_size.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
             self.selected_data_table.setItem(row, 1, item_size)

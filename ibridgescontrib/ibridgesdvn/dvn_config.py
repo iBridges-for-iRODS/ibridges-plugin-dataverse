@@ -171,9 +171,9 @@ class DVNConf:
         _, entry = self.get_entry(url_or_alias)
         return entry.get("token")
 
+
 def show_available(dvn_conf) -> None:
     """Print all configured Dataverse entries in a readable table."""
-
     print("\nConfigured Dataverse instances:\n")
 
     if not dvn_conf.dvns:
@@ -204,10 +204,7 @@ def show_available(dvn_conf) -> None:
 
     # Header
     print(
-        f"{' '.ljust(1)} "
-        f"{'Alias'.ljust(alias_w)}   "
-        f"{'URL'.ljust(url_w)}   "
-        f"URL   Token"
+        f"{' '.ljust(1)} " f"{'Alias'.ljust(alias_w)}   " f"{'URL'.ljust(url_w)}   " f"URL   Token"
     )
     print("-" * (alias_w + url_w + 25))
 
@@ -220,4 +217,3 @@ def show_available(dvn_conf) -> None:
         )
 
     print()
-

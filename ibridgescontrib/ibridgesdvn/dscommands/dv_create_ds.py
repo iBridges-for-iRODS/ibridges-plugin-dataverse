@@ -1,18 +1,20 @@
+"""CLI create dataset."""
 from pathlib import Path
+
 from ibridges.cli.base import BaseCliCommand
 
-from ibridgescontrib.ibridgesdvn.dataverse import Dataverse
-from ibridgescontrib.ibridgesdvn.dvn_config import DVNConf, DVN_CONFIG_FP
+from ibridgescontrib.ibridgesdvn.ds_meta import (
+    build_metadata_json,
+    gather_metadata_inputs,
+)
+from ibridgescontrib.ibridgesdvn.dvn_config import DVN_CONFIG_FP, DVNConf
 from ibridgescontrib.ibridgesdvn.dvn_operations import DvnOperations
 from ibridgescontrib.ibridgesdvn.utils import ensure_connection
 
-from ibridgescontrib.ibridgesdvn.ds_meta import (
-    gather_metadata_inputs,
-    build_metadata_json,
-)
-
 
 class CliDvnCreateDataset(BaseCliCommand):
+    """Command."""
+
     names = ["dv-create-ds"]
     description = "Create a new Dataverse dataset."
 
@@ -28,7 +30,7 @@ class CliDvnCreateDataset(BaseCliCommand):
 
     @staticmethod
     def run_shell(session, parser, args):
-        print(args)
+        """Command."""
         ops = DvnOperations()
         dvn_conf = DVNConf(DVN_CONFIG_FP, parser)
 

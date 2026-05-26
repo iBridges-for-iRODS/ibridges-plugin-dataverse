@@ -12,6 +12,7 @@ from ibridgescontrib.ibridgesdvn.dvn_config import DVN_CONFIG_FP, DVNConf, show_
 # dv-init
 # ----------------------------------------------------------------------
 
+
 class CliDvnInit(BaseCliCommand):
     """Initialize Dataverse configuration by providing a token."""
 
@@ -44,15 +45,15 @@ class CliDvnInit(BaseCliCommand):
         url_or_alias = args.url_or_alias
 
         try:
-            url, entry = dvn_conf.get_entry(url_or_alias)
+            url, _ = dvn_conf.get_entry(url_or_alias)
         except KeyError:
             # Treat input as URL and create a new Dataverse entry
             if not dvn_conf.is_valid_url(url_or_alias):
                 parser.error(f"Supplied '{url_or_alias}' is neither a known alias nor a valid URL.")
-    
+
             dvn_conf.add_dataverse(url_or_alias)
-            url, entry = dvn_conf.get_entry(url_or_alias)
-    
+            url, _ = dvn_conf.get_entry(url_or_alias)
+
         # Set as current Dataverse
         dvn_conf.set_dvn(url)
         # Prompt for token
@@ -71,6 +72,7 @@ class CliDvnInit(BaseCliCommand):
 # ----------------------------------------------------------------------
 # dv-switch
 # ----------------------------------------------------------------------
+
 
 class CliDvnSwitch(BaseCliCommand):
     """Switch to another existing Dataverse configuration."""
@@ -103,4 +105,3 @@ class CliDvnSwitch(BaseCliCommand):
 
         dvn_conf.set_dvn(args.url_or_alias)
         show_available(dvn_conf)
-

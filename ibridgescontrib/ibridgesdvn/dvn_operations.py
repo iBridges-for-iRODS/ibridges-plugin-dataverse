@@ -3,19 +3,18 @@
 from __future__ import annotations
 
 import json
+import shutil
 import warnings
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Dict, List, Optional
-
-import shutil
+import httpx
 
 from ibridges import IrodsPath, download
 
 from ibridgescontrib.ibridgesdvn.dataverse import Dataverse
-from ibridgescontrib.ibridgesdvn.dvn_config import DVNConf, DVN_CONFIG_FP
+from ibridgescontrib.ibridgesdvn.dvn_config import DVN_CONFIG_FP, DVNConf
 from ibridgescontrib.ibridgesdvn.utils import calculate_checksum, create_unique_filename
-
 
 DVN_OPS_PATH = Path.home() / ".dvn" / "dvn_active_ops_log.json"
 TEMP_DIR = Path.home() / ".dvn" / "data"
@@ -43,24 +42,21 @@ class DvnOperations:
         self._validate_structure()
         self._auto_cleanup()
 
-
     def _validate_dv(self, dv_url: str, parser=None):
         """Validate that the Dataverse URL exists, is reachable, and has a valid token."""
-    
         dvn_conf = DVNConf(DVN_CONFIG_FP, parser)
         try:
             url, entry = dvn_conf.get_entry(dv_url)
-        except KeyError:
-            raise RuntimeError(f"No Dataverse configuration found for '{dv_url}'.")
-    
+        except KeyError as exc:
+            raise RuntimeError(f"No Dataverse configuration found for '{dv_url}'.") from exc
+
         if not dvn_conf.is_valid_url(url):
             raise RuntimeError(f"Invalid Dataverse URL: {url}")
-    
+
         token = entry.get("token")
         if not token:
             raise RuntimeError(f"No API token configured for {url}. Use 'dv-init' first.")
-    
-        import httpx
+
         try:
             resp = httpx.get(
                 f"{url}/api/users/:me",
@@ -68,12 +64,13 @@ class DvnOperations:
                 timeout=3.0,
             )
             if resp.status_code != 200:
-                raise RuntimeError(f"Invalid API token for {url}. Use 'dv-init' to set a valid token.")
-        except Exception:
-            raise RuntimeError(f"Dataverse at {url} is unreachable.")
-    
+                raise RuntimeError(
+                    f"Invalid API token for {url}. Use 'dv-init' to set a valid token."
+                )
+        except Exception as exc:
+            raise RuntimeError(f"Dataverse at {url} is unreachable.") from exc
+
         return url, token
-    
 
     def _read_ops_log(self) -> Dict[str, dict]:
         try:
@@ -109,23 +106,20 @@ class DvnOperations:
     def _auto_cleanup(self) -> None:
         """Automatically remove empty upload entries and orphaned structures."""
         changed = False
-    
-        for dv_url, dv_ops in self.ops.items():
+
+        for _, dv_ops in self.ops.items():
             # 1. Remove add_file entries with no paths
             before = len(dv_ops["add_file"])
-            dv_ops["add_file"] = [
-                entry for entry in dv_ops["add_file"]
-                if entry.get("irods_paths")
-            ]
+            dv_ops["add_file"] = [entry for entry in dv_ops["add_file"] if entry.get("irods_paths")]
             if len(dv_ops["add_file"]) != before:
                 changed = True
-    
+
             # 2. Remove duplicate dataset IDs in created_datasets
             before = len(dv_ops["created_datasets"])
             dv_ops["created_datasets"] = list(sorted(set(dv_ops["created_datasets"])))
             if len(dv_ops["created_datasets"]) != before:
                 changed = True
-    
+
         if changed:
             self._save()
 
@@ -133,7 +127,7 @@ class DvnOperations:
         """Manually trigger full cleanup including Dataverse checks."""
         api = self._get_api(dv_url, parser)
         dv_ops = self._ensure_dv_entry(dv_url)
-    
+
         cleaned = []
         for ds in dv_ops.get("created_datasets", []):
             try:
@@ -142,7 +136,7 @@ class DvnOperations:
             except Exception:
                 cleaned.append(ds)
         dv_ops["created_datasets"] = cleaned
-    
+
         cleaned_add = []
         for entry in dv_ops.get("add_file", []):
             ds = entry.get("dataset")
@@ -152,12 +146,11 @@ class DvnOperations:
             except Exception:
                 pass
         dv_ops["add_file"] = cleaned_add
-    
+
         self._auto_cleanup()
-    
+
         self._save()
 
-    
     def _ensure_dv_entry(self, dv_url: str) -> Dict[str, list]:
         if dv_url not in self.ops:
             self.ops[dv_url] = {"add_file": [], "created_datasets": []}
@@ -186,7 +179,7 @@ class DvnOperations:
         """Return True if size exceeds Dataverse max upload size."""
         try:
             max_size = api.get_max_upload_size()
-            return max_size > 0 and size > max_size
+            return max_size > 0 and size > max_size  # pylint: disable=chained-comparison
         except Exception:
             # Fail-open: if we can't read the setting, don't block upload.
             return False
@@ -201,10 +194,12 @@ class DvnOperations:
             if irods_path not in paths:
                 paths.append(irods_path)
         else:
-            dv_ops["add_file"].append({
-                "dataset": dataset_id,
-                "irods_paths": [irods_path],
-            })
+            dv_ops["add_file"].append(
+                {
+                    "dataset": dataset_id,
+                    "irods_paths": [irods_path],
+                }
+            )
 
         self._commit()
 
@@ -229,7 +224,6 @@ class DvnOperations:
         """Return staged iRODS paths for a dataset, or None."""
         ds_entry = self._find_dataset_entry(dv_url, dataset_id)
         return ds_entry.get("irods_paths") if ds_entry else None
-
 
     def register_created_dataset(self, dv_url: str, dataset_id: str) -> None:
         """Track newly created datasets so the workflow can auto-push them later."""
@@ -267,7 +261,7 @@ class DvnOperations:
         dv_ops["created_datasets"] = still_drafts
         self._commit()
 
-
+    # pylint: disable=too-many-positional-arguments
     def create_dataset_from_file(
         self,
         dv_url: str,
@@ -306,12 +300,28 @@ class DvnOperations:
                             {
                                 "typeName": "author",
                                 "typeClass": "compound",
-                                "value": [{"authorName": {"typeName": "authorName", "typeClass": "primitive", "value": author}}],
+                                "value": [
+                                    {
+                                        "authorName": {
+                                            "typeName": "authorName",
+                                            "typeClass": "primitive",
+                                            "value": author,
+                                        }
+                                    }
+                                ],
                             },
                             {
                                 "typeName": "dsDescription",
                                 "typeClass": "compound",
-                                "value": [{"dsDescriptionValue": {"typeName": "dsDescriptionValue", "typeClass": "primitive", "value": description}}],
+                                "value": [
+                                    {
+                                        "dsDescriptionValue": {
+                                            "typeName": "dsDescriptionValue",
+                                            "typeClass": "primitive",
+                                            "value": description,
+                                        }
+                                    }
+                                ],
                             },
                         ],
                     },
@@ -325,6 +335,7 @@ class DvnOperations:
         self.register_created_dataset(dv_url, pid)
         return pid
 
+    # pylint: disable=too-many-positional-arguments, too-many-locals
     def push_dataset(
         self,
         session,
@@ -338,7 +349,7 @@ class DvnOperations:
 
         if not api.dataset_exists(dataset_id):
             raise ValueError(f"Dataset {dataset_id} does not exist.")
-        
+
         # make copy of paths to loop over and adjust  during loop
         paths = list(self.get_paths(dv_url, dataset_id))
         if not paths:
@@ -361,9 +372,7 @@ class DvnOperations:
                     irods_size = 0
 
                 if irods_size and self._file_too_large(api, irods_size):
-                    warnings.warn(
-                        f"Skipping {p}: file size {irods_size} exceeds Dataverse limit."
-                    )
+                    warnings.warn(f"Skipping {p}: file size {irods_size} exceeds Dataverse limit.")
                     continue
 
                 local_path = create_unique_filename(tmp, ipath.name)
@@ -394,13 +403,11 @@ class DvnOperations:
         if api.is_dataset_published(dataset_id):
             self.delete_created_datasets(dv_url, [dataset_id])
 
-
     def flush_dataset(self, dv_url: str, dataset_id: str) -> None:
         """Remove all operations for a dataset after a successful push."""
         dv_ops = self._ensure_dv_entry(dv_url)
         dv_ops["add_file"] = [
-            entry for entry in dv_ops["add_file"]
-            if entry["dataset"] != dataset_id
+            entry for entry in dv_ops["add_file"] if entry["dataset"] != dataset_id
         ]
 
         self._commit()

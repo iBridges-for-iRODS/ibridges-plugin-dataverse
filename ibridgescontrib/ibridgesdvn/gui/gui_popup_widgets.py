@@ -24,6 +24,7 @@ class CreateDataset(PySide6.QtWidgets.QDialog, ui_create_dataset):
     """Popup window to create a new dataset."""
 
     def __init__(self, dvn_api, return_label):
+        """Init."""
         super().__init__()
         super().setupUi(self)
 
@@ -44,6 +45,7 @@ class CreateDataset(PySide6.QtWidgets.QDialog, ui_create_dataset):
     # ------------------------------------------------------------------
 
     def close(self):
+        """Close widget."""
         self.done(0)
 
     def _set_error(self, msg):
@@ -66,6 +68,7 @@ class CreateDataset(PySide6.QtWidgets.QDialog, ui_create_dataset):
     # ------------------------------------------------------------------
 
     def create(self):
+        """Create dataverse dataset."""
         dv = self.dv_edit.text().strip()
         if not dv:
             self._set_error("Please provide a Dataverse collection.")
@@ -82,9 +85,7 @@ class CreateDataset(PySide6.QtWidgets.QDialog, ui_create_dataset):
                 self._set_error(f"Could not find {dv}.")
                 return
         except ApiAuthorizationError:
-            self._set_error(
-                f"Authorization Error: token invalid for {self.dvn_api.url}."
-            )
+            self._set_error(f"Authorization Error: token invalid for {self.dvn_api.url}.")
             return
 
         # Create dataset
@@ -111,6 +112,7 @@ class CreateDataset(PySide6.QtWidgets.QDialog, ui_create_dataset):
     # ------------------------------------------------------------------
 
     def select_meta_file(self):
+        """Fileselector for json."""
         select_file, _ = QFileDialog.getOpenFileName(
             self,
             "Select JSON file",
@@ -130,6 +132,7 @@ class CreateDataset(PySide6.QtWidgets.QDialog, ui_create_dataset):
     # ------------------------------------------------------------------
 
     def create_meta(self):
+        """Create metadata."""
         self.json_file_label.clear()
         self.meta_browser.clear()
         meta_widget = CreateMetadata(self.meta_browser)
@@ -328,13 +331,13 @@ class CreateDvnURL(PySide6.QtWidgets.QDialog, ui_create_url):
         url = self.url_edit.text().strip()
         token = self.token_edit.text().strip()
         alias = self.alias_edit.text().strip()
-    
+
         # Validate input
         error = self._input_is_invalid(url, token)
         if error:
             self.error_label.setText(error)
             return
-    
+
         # 1. Ensure URL entry exists (create if missing)
         try:
             # URL already exists → get it
@@ -347,7 +350,7 @@ class CreateDvnURL(PySide6.QtWidgets.QDialog, ui_create_url):
                 self.error_label.setText(str(exc))
                 return
             existing_url, entry = self.dvn_conf.get_entry(url)
-    
+
         # 2. If alias provided → assign/update alias
         if alias:
             try:
@@ -355,13 +358,12 @@ class CreateDvnURL(PySide6.QtWidgets.QDialog, ui_create_url):
             except ValueError as exc:
                 self.error_label.setText(str(exc))
                 return
-    
+
         # 3. Store token
         self.dvn_conf.set_token(existing_url, token)
-    
+
         # Close dialog
         self.done(0)
-
 
     def _input_is_invalid(self, url, token):
         if url == "" or not self.dvn_conf.is_valid_url(url):

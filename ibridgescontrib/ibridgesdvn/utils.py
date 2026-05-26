@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import hashlib
 from pathlib import Path
-from typing import Optional
 from typing import Optional, Tuple
+
 from ibridgescontrib.ibridgesdvn.dataverse import Dataverse
 
 
@@ -73,14 +73,15 @@ def calculate_checksum(file_path: Path, alg: str = "sha1") -> Optional[str]:
 
 
 def ensure_connection(dvn_conf, url: str) -> Tuple[bool, Optional[Dataverse], Optional[str]]:
-    """
-    Validate URL + token exactly like the CLI does.
+    """Validate URL + token exactly like the CLI does.
 
-    Returns:
+    Returns
+    -------
         (ok, dv_api, error_message)
         ok: True if connection succeeded
         dv_api: Dataverse instance or None
         error_message: None if ok, otherwise a string
+
     """
     # 1. Extract token from config
     try:

@@ -72,9 +72,8 @@ class TransferDataThread(PySide6.QtCore.QThread):
 
     def _verify_checksum(self, local_path: Path, irods_path: IrodsPath) -> bool:
         """Verify checksum after upload, with safe handling for missing checksums."""
-    
         checksum_info = self.dvn_api.get_checksum_by_filename(self.dataset_id, local_path.name)
-    
+
         # Dataverse returned no checksum → treat as failure, but do NOT crash
         if not checksum_info:
             self.logger.error(
@@ -83,12 +82,12 @@ class TransferDataThread(PySide6.QtCore.QThread):
                 self.dataset_id,
             )
             return False
-    
+
         alg, dvn_checksum = checksum_info
-    
+
         # Local checksum calculation
         local_checksum = calculate_checksum(local_path, alg=alg)
-    
+
         # Local checksum failed (file unreadable, etc.)
         if local_checksum is None:
             self.logger.error(
@@ -96,7 +95,7 @@ class TransferDataThread(PySide6.QtCore.QThread):
                 local_path,
             )
             return False
-    
+
         # Compare
         if local_checksum != dvn_checksum:
             self.logger.error(
@@ -106,7 +105,7 @@ class TransferDataThread(PySide6.QtCore.QThread):
                 dvn_checksum,
             )
             return False
-    
+
         # Success
         self.logger.info(
             "DATAVERSE: Checksum OK for %s --> %s",
@@ -115,29 +114,27 @@ class TransferDataThread(PySide6.QtCore.QThread):
         )
         return True
 
-
     def _cleanup_file(self, irods_path: IrodsPath, local_path: Path):
         """Remove staged entry and delete temporary file."""
         try:
             # Remove from staging log
             self.dvn_ops.rm_file(self.dvn_url, self.dataset_id, str(irods_path))
-    
+
             # Remove local temp file
             if local_path.exists():
                 local_path.unlink()
-    
+
             self.logger.debug(
                 "DATAVERSE: Cleaned up %s and removed staging entry.",
                 irods_path,
             )
-    
+
         except Exception as err:
             self.logger.error(
                 "DATAVERSE: Cleanup error for %s: %s",
                 irods_path,
                 repr(err),
             )
-    
 
     def _delete_session(self):
         """Clean up iRODS and Dataverse sessions."""

@@ -25,12 +25,14 @@ DATAVERSE_SUBJECTS = [
 
 # ---------- CLI input helpers ----------
 
+
 def get_non_empty_input(prompt: str) -> str:
     """Prompt until a non-empty answer is given."""
     while True:
         value = input(prompt).strip()
         if value:
             return value
+
 
 def collect_authors() -> List[Dict[str, Any]]:
     """Collect authors interactively."""
@@ -168,7 +170,9 @@ def gather_metadata_inputs() -> Dict[str, Any]:
         "subjects": collect_subjects(),
     }
 
+
 # ---------- Validation helpers ----------
+
 
 def is_valid_email(email: str) -> bool:
     """Check if email is valid using regex."""

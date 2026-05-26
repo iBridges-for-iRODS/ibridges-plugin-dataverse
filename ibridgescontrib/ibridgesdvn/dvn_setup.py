@@ -40,14 +40,13 @@ class CliDvnAlias(BaseCliCommand):
 
     @staticmethod
     def run_shell(session, parser, args):
-        """This command is CLI-only."""
+        """Command."""
         raise NotImplementedError("dv-setup is not available in the iBridges shell.")
 
 
     @classmethod
     def run_command(cls, args):
         """Create, delete, or list Dataverse aliases."""
-
         parser = cls.get_parser(argparse.ArgumentParser)
         dvn_conf = DVNConf(DVN_CONFIG_FP, parser)
 

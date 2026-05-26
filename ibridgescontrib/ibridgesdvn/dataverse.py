@@ -7,10 +7,8 @@ from typing import Any, Dict, Optional, Tuple
 
 import httpx
 from pyDataverse.api import NativeApi
-from pyDataverse.auth import BearerTokenAuth
 from pyDataverse.exceptions import ApiAuthorizationError
 from pyDataverse.models import Datafile, Dataset
-from pyDataverse.utils import read_file
 
 
 class Dataverse:
@@ -70,7 +68,6 @@ class Dataverse:
         resp.raise_for_status()
         return resp.json()
 
-
     def _normalize_bare_id(self, dataset_id: str) -> str:
         """Return the dataset ID without a doi: prefix."""
         if dataset_id.startswith("doi:"):
@@ -105,7 +102,6 @@ class Dataverse:
         state = self.get_dataset_state(dataset_id)
         return state.upper() == "RELEASED"
 
-
     def create_dataset_from_json(self, dataverse: str, metadata_json: str) -> Dict[str, Any]:
         """Create a dataset using a JSON metadata string."""
         if not dataverse:
@@ -128,7 +124,6 @@ class Dataverse:
         pid = self._to_doi(dataset_id)
         resp = self.http.delete(f"/api/datasets/:persistentId/?persistentId={pid}")
         resp.raise_for_status()
-
 
     def add_datafile_to_dataset(
         self,
@@ -173,27 +168,27 @@ class Dataverse:
         return None
 
     def get_max_upload_size(self) -> int:
-        """
-        Return Dataverse max upload size in bytes.
+        """Return Dataverse max upload size in bytes.
+
         If the setting is missing or the endpoint is unavailable,
         fall back to 9 GB.
         """
-        DEFAULT_LIMIT = 9 * 10**9  # 9 GB
-    
+        DEFAULT_LIMIT = 9 * 10**9  # 9 GB # noqa: N806  # pylint: disable=invalid-name
+
         try:
             resp = self.http.get("/api/info/settings/:MaxFileUploadSizeInBytes")
-    
+
             # Some Dataverse installations return 404 for this endpoint
             if resp.status_code == 404:
                 return DEFAULT_LIMIT
-    
+
             resp.raise_for_status()
-    
+
             data = resp.json().get("data")
             if data is None:
                 return DEFAULT_LIMIT
-    
+
             return int(data)
-    
+
         except Exception:
             return DEFAULT_LIMIT
