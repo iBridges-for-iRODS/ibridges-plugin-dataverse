@@ -295,34 +295,41 @@ class CreateDvnURL(PySide6.QtWidgets.QDialog, ui_create_url):
     def create(self):
         """Create new Dataverse configuration."""
         self.error_label.clear()
-        url = self.url_edit.text()
-        token = self.token_edit.text()
-        alias = self.alias_edit.text()
-        print(url, token, alias)
-
+        url = self.url_edit.text().strip()
+        token = self.token_edit.text().strip()
+        alias = self.alias_edit.text().strip()
+    
+        # Validate input
         error = self._input_is_invalid(url, token)
         if error:
             self.error_label.setText(error)
             return
-        
-        # Update alias or stop if alias already exists
+    
+        # 1. Ensure URL entry exists (create if missing)
+        try:
+            # URL already exists → get it
+            existing_url, entry = self.dvn_conf.get_entry(url)
+        except KeyError:
+            # URL does not exist → create new entry
+            try:
+                self.dvn_conf.add_dataverse(url, alias=None)
+            except ValueError as exc:
+                self.error_label.setText(str(exc))
+                return
+            existing_url, entry = self.dvn_conf.get_entry(url)
+    
+        # 2. If alias provided → assign/update alias
         if alias:
             try:
-                self.dvn_conf.set_alias(alias, url)
+                self.dvn_conf.update_alias(existing_url, alias)
             except ValueError as exc:
-                self.error_label.setText(repr(exc))
+                self.error_label.setText(str(exc))
                 return
-        
-        # url entry already exists --> update
-        try:
-            url, entry = self.dvn_conf.get_entry(url)
-        except KeyError:
-            # New entry
-            entry = {}
-        
-        entry["token"] = token
-        self.dvn_conf.dvns[url] = entry
-        self.dvn_conf.save()
+    
+        # 3. Store token
+        self.dvn_conf.set_token(existing_url, token)
+    
+        # Close dialog
         self.done(0)
 
 

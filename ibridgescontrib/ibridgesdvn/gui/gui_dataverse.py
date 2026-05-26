@@ -84,8 +84,10 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
         self.dv_url_select_box.clear()
     
         items = []
+    
         for url, entry in self.dvn_conf.dvns.items():
-            alias = entry.get("alias", "[no alias]")
+            alias = entry.get("alias")
+            alias_display = alias if alias else "[no alias]"
             token = entry.get("token")
     
             # --- URL validation ---
@@ -112,15 +114,16 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
             else:
                 token_status = "no token" if not token else "token invalid"
     
-            # --- Build display label ---
-            label = f"{alias}  →  {url}  [{url_status}, {token_status}]"
+            # --- Build display label (NO marker) ---
+            label = f"{alias_display}  →  {url}  [{url_status}, {token_status}]"
+    
             items.append((label, url))
     
         # Populate dropdown
         for label, url in items:
             self.dv_url_select_box.addItem(label, userData=url)
     
-        # Restore active Dataverse if possible
+        # Auto-select the current Dataverse
         if self.dvn_conf.cur_dvn:
             for i in range(self.dv_url_select_box.count()):
                 if self.dv_url_select_box.itemData(i) == self.dvn_conf.cur_dvn:
@@ -233,7 +236,7 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
             return
 
         self.temp_dir.mkdir(exist_ok=True)
-        _, entry = self.dvn_conf.get_entry(self.url)
+        token = self.dvn_conf.get_token(self.url)
 
         try:
             self.transfer_thread = TransferDataThread(
@@ -241,7 +244,7 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
                 self.logger,
                 self.dvn_ops,
                 self.url,
-                entry["token"],
+                token,
                 self.temp_dir,
                 dataset_id,
                 self.check_checksum_box.isChecked(),
