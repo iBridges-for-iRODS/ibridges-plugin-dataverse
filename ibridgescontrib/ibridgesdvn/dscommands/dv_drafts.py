@@ -75,7 +75,7 @@ class CliDvnDrafts(BaseCliCommand):
         if delete_remote:
             for ds in selected:
                 try:
-                    api.delete_dataset(ds)
+                    dvn_api.delete_dataset(ds)
                     print(f"Deleted dataset {ds} on Dataverse.")
                 except Exception as err:
                     print(f"Failed to delete {ds} on Dataverse: {err}")

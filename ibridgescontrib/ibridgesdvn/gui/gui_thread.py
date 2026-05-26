@@ -116,6 +116,29 @@ class TransferDataThread(PySide6.QtCore.QThread):
         return True
 
 
+    def _cleanup_file(self, irods_path: IrodsPath, local_path: Path):
+        """Remove staged entry and delete temporary file."""
+        try:
+            # Remove from staging log
+            self.dvn_ops.rm_file(self.dvn_url, self.dataset_id, str(irods_path))
+    
+            # Remove local temp file
+            if local_path.exists():
+                local_path.unlink()
+    
+            self.logger.debug(
+                "DATAVERSE: Cleaned up %s and removed staging entry.",
+                irods_path,
+            )
+    
+        except Exception as err:
+            self.logger.error(
+                "DATAVERSE: Cleanup error for %s: %s",
+                irods_path,
+                repr(err),
+            )
+    
+
     def _delete_session(self):
         """Clean up iRODS and Dataverse sessions."""
         self.thread_session.close()
