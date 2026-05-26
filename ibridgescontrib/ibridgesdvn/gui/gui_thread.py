@@ -71,25 +71,50 @@ class TransferDataThread(PySide6.QtCore.QThread):
         self.logger.info("DATAVERSE: Upload %s --> %s", local_path, self.dataset_id)
 
     def _verify_checksum(self, local_path: Path, irods_path: IrodsPath) -> bool:
-        """Verify checksum after upload."""
-        alg, dvn_checksum = self.dvn_api.get_checksum_by_filename(self.dataset_id, local_path.name)
-        local_checksum = calculate_checksum(local_path, alg=alg)
-
-        if local_checksum != dvn_checksum:
+        """Verify checksum after upload, with safe handling for missing checksums."""
+    
+        checksum_info = self.dvn_api.get_checksum_by_filename(self.dataset_id, local_path.name)
+    
+        # Dataverse returned no checksum → treat as failure, but do NOT crash
+        if not checksum_info:
             self.logger.error(
-                "DATAVERSE: Checksum mismatch for %s --> %s",
-                local_path,
+                "DATAVERSE: No checksum returned for %s in dataset %s.",
+                local_path.name,
                 self.dataset_id,
             )
             return False
-
-        self.logger.info("DATAVERSE: Checksum OK for %s --> %s", irods_path, self.dataset_id)
+    
+        alg, dvn_checksum = checksum_info
+    
+        # Local checksum calculation
+        local_checksum = calculate_checksum(local_path, alg=alg)
+    
+        # Local checksum failed (file unreadable, etc.)
+        if local_checksum is None:
+            self.logger.error(
+                "DATAVERSE: Could not compute local checksum for %s.",
+                local_path,
+            )
+            return False
+    
+        # Compare
+        if local_checksum != dvn_checksum:
+            self.logger.error(
+                "DATAVERSE: Checksum mismatch for %s (local=%s, dv=%s).",
+                local_path.name,
+                local_checksum,
+                dvn_checksum,
+            )
+            return False
+    
+        # Success
+        self.logger.info(
+            "DATAVERSE: Checksum OK for %s --> %s",
+            irods_path,
+            self.dataset_id,
+        )
         return True
 
-    def _cleanup_file(self, irods_path: IrodsPath, local_path: Path):
-        """Remove file from pending list and delete local temp file."""
-        self.dvn_ops.rm_file(self.dvn_url, self.dataset_id, str(irods_path))
-        local_path.unlink(missing_ok=True)
 
     def _delete_session(self):
         """Clean up iRODS and Dataverse sessions."""

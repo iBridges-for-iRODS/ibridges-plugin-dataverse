@@ -4,7 +4,7 @@ from ibridges.cli.base import BaseCliCommand
 from ibridges.cli.util import parse_remote
 
 from ibridgescontrib.ibridgesdvn.dataverse import Dataverse
-from ibridgescontrib.ibridgesdvn.dvn_config import DVNConf
+from ibridgescontrib.ibridgesdvn.dvn_config import DVN_CONFIG_FP, DVNConf
 from ibridgescontrib.ibridgesdvn.dvn_operations import DvnOperations
 from ibridgescontrib.ibridgesdvn.utils import ensure_connection
 
@@ -21,7 +21,7 @@ class CliDvnAddFile(BaseCliCommand):
     @staticmethod
     def run_shell(session, parser, args):
         ops = DvnOperations()
-        dvn_conf = DVNConf(parser)
+        dvn_conf = DVNConf(DVN_CONFIG_FP, parser)
         cur_url = dvn_conf.cur_dvn
 
         exists, dvn_api, err = ensure_connection(dvn_conf, cur_url)

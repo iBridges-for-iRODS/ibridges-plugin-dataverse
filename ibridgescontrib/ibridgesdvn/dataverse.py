@@ -58,7 +58,7 @@ class Dataverse:
     def dataverse_exists(self, alias: str) -> bool:
         """Return True if a dataverse with the given alias exists."""
         resp = self.api.get_dataverse(alias)
-        return resp.is_success
+        return resp.status_code == 200
 
     def get_dataverse_info(self, alias: str) -> Dict[str, Any]:
         """Return metadata for the specified dataverse."""
@@ -115,25 +115,6 @@ class Dataverse:
 
         ds = Dataset()
         ds.from_json(metadata_json)
-
-        if not ds.validate_json():
-            raise ValueError("Invalid dataset metadata JSON.")
-
-        resp = self.api.create_dataset(dataverse, ds.json())
-        resp.raise_for_status()
-        return resp.json()
-
-    def create_dataset_from_file(self, dataverse: str, metadata_path: Path, verbose: bool = False) -> Dict[str, Any]:
-        """Create a dataset using metadata loaded from a JSON file."""
-        if not dataverse:
-            raise ValueError("Dataverse name must not be empty.")
-
-        ds = Dataset()
-        ds.from_json(read_file(str(metadata_path)))
-
-        if verbose:
-            print("Dataset metadata ok:", ds.validate_json())
-            print(ds.get())
 
         if not ds.validate_json():
             raise ValueError("Invalid dataset metadata JSON.")

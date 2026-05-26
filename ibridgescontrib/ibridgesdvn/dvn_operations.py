@@ -338,14 +338,16 @@ class DvnOperations:
 
         if not api.dataset_exists(dataset_id):
             raise ValueError(f"Dataset {dataset_id} does not exist.")
-
-        paths = self.get_paths(dv_url, dataset_id)
+        
+        # make copy of paths to loop over and adjust  during loop
+        paths = list(self.get_paths(dv_url, dataset_id))
         if not paths:
             print("No files staged for upload.")
             return
 
         with self._temp_dir() as tmp:
             for p in paths:
+                print("STAGED PATHS:", paths)
                 ipath = IrodsPath(session, p)
 
                 if not ipath.dataobject_exists():
