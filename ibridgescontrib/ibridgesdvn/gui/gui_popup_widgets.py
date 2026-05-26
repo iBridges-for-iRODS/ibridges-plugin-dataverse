@@ -284,6 +284,7 @@ class CreateDvnURL(PySide6.QtWidgets.QDialog, ui_create_url):
         self.ok_button.clicked.connect(self.create)
         self.cancel_button.clicked.connect(self.close)
         self.dvn_conf = dvn_conf
+        self.error_label.setWordWrap(True)
 
     def close(self):
         """Close widget."""
@@ -294,28 +295,37 @@ class CreateDvnURL(PySide6.QtWidgets.QDialog, ui_create_url):
         url = self.url_edit.text()
         token = self.token_edit.text()
         alias = self.alias_edit.text()
+        print(url, token, alias)
 
-        check = self._input_is_invalid(url, token)
-        if check is False:
-            self.dvn_conf.set_dvn(url)
+        error = self._input_is_invalid(url, token)
+        if error:
+            self.error_label.setText(error)
+            return
+        
+        # Update alias or stop if alias already exists
+        if alias:
             try:
-                _, entry = self.dvn_conf.get_entry()
-                entry["token"] = token
-            except:  # pylint: disable=W0702 # noqa: E722
-                entry = {}
-                entry["token"] = token
+                self.dvn_conf.set_alias(alias, url)
+            except ValueError as exc:
+                self.error_label.setText(repr(exc))
+                return
+        
+        # url entry already exists --> update
+        try:
+            url, entry = self.dvn_conf.get_entry(url)
+        except KeyError:
+            # New entry
+            entry = {}
+        
+        self.dvn_conf.dvns[url] = entry
+        self.dvn_conf.save()
+        self.done(0)
 
-            if alias:
-                entry["alias"] = alias
-            self.dvn_conf.dvns[url] = entry
-            self.dvn_conf.save()
-            self.done(0)
-        else:
-            self.error_label.setText(check)
 
     def _input_is_invalid(self, url, token):
         if url == "" or not self.dvn_conf.is_valid_url(url):
             return "Please provide a valid URL."
         if token == "":
             return "Please provide a token."
-        return False
+
+        return None

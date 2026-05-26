@@ -153,8 +153,6 @@ class DVNConf:
         # Alias already exists
         try:
             self.get_entry(alias)
-            if self.parser:
-                self.parser.error(f"Alias '{alias}' already exists.")
             raise ValueError(f"Alias '{alias}' already exists.")
         except KeyError:
             pass
@@ -181,8 +179,6 @@ class DVNConf:
         if url == DEMO_DVN:
             # Cannot delete default
             if "alias" not in entry:
-                if self.parser:
-                    self.parser.error("Cannot remove default Dataverse.")
                 raise KeyError("Cannot remove default Dataverse.")
             entry.pop("alias")
         else:

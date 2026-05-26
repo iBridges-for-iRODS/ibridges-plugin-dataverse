@@ -35,6 +35,7 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
         super().setupUi(self)
 
         self.logger = logger
+        self.logger.setLevel(logging.INFO)
         self.session = session
         self.app_name = app_name
 
@@ -161,13 +162,14 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
         """Remove a Dataverse configuration."""
         # Get the actual URL stored in userData
         cur_url = self.dv_url_select_box.currentData()
-        print(cur_url)
     
         if not cur_url:
             self.error_label.setText("No Dataverse selected.")
             return
-    
-        self.dvn_conf.delete_alias(cur_url)
+        try: 
+            self.dvn_conf.delete_alias(cur_url)
+        except KeyError as exc:
+            self.logger.info("DATAVERSE: %s", exc)
         self.load_dataverse_conf()
 
     # ------------------------------------------------------------------
