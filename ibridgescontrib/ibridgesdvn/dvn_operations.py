@@ -229,7 +229,7 @@ class DvnOperations:
         """Track newly created datasets so the workflow can auto-push them later."""
         dv_ops = self._ensure_dv_entry(dv_url)
         if dataset_id not in dv_ops["created_datasets"]:
-            dv_ops["created_datasets"].append(dataset_id)
+            dv_ops["created_datasets"].append(dataset_id.replace("doi:", ""))
         self._commit()
 
     def get_created_datasets(self, dv_url: str) -> list[str]:
