@@ -69,6 +69,7 @@ class CreateDataset(PySide6.QtWidgets.QDialog, ui_create_dataset):
 
     def create(self):
         """Create dataverse dataset."""
+        self._set_error("")
         dv = self.dv_edit.text().strip()
         if not dv:
             self._set_error("Please provide a Dataverse collection.")
@@ -104,8 +105,9 @@ class CreateDataset(PySide6.QtWidgets.QDialog, ui_create_dataset):
             self.return_label.setText(doi)
             self.done(0)
 
-        except ApiAuthorizationError as err:
+        except (ApiAuthorizationError, KeyError, Exception) as err:
             self._set_error(f"ERROR: Could not create Dataset. {repr(err)}")
+
 
     # ------------------------------------------------------------------
     # Metadata file selection
