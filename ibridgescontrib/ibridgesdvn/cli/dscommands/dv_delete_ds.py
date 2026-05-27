@@ -1,4 +1,5 @@
 """Delete dataset."""
+
 from ibridges.cli.base import BaseCliCommand
 
 from ibridgescontrib.ibridgesdvn.dvn_config import DVNConf
@@ -54,7 +55,7 @@ class CliDvnDeleteDataset(BaseCliCommand):
 
         if files:
             parser.error(
-                f"Dataset {dataset_id} is not empty ({len(files)} files). " "Refusing deletion."
+                f"Dataset {dataset_id} is not empty ({len(files)} files). Refusing deletion."
             )
 
         # 4. Delete from Dataverse

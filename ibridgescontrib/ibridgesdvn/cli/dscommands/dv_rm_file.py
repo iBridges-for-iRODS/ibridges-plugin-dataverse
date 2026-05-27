@@ -1,4 +1,5 @@
 """Command to unstage files."""
+
 from ibridges.cli.base import BaseCliCommand
 
 from ibridgescontrib.ibridgesdvn.dvn_config import DVN_CONFIG_FP, DVNConf
@@ -9,7 +10,7 @@ class CliDvnRmFile(BaseCliCommand):
     """Unstage file."""
 
     names = ["dv-rm-file"]
-    description = "Remove a staged file from the Dataverse upload queue."
+    description = "Remove a file from the staging area."
 
     @classmethod
     def _mod_parser(cls, parser):

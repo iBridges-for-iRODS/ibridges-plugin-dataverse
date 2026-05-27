@@ -1,4 +1,5 @@
 """CLI staging files."""
+
 import warnings
 
 from ibridges.cli.base import BaseCliCommand

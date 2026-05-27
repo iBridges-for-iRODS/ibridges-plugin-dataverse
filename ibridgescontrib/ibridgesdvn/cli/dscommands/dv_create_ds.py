@@ -1,4 +1,5 @@
 """CLI create dataset."""
+
 from pathlib import Path
 
 from ibridges.cli.base import BaseCliCommand

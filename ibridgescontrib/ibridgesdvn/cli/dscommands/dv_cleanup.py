@@ -1,4 +1,5 @@
 """CLI clean up cache."""
+
 from ibridges.cli.base import BaseCliCommand
 
 from ibridgescontrib.ibridgesdvn.dvn_config import DVN_CONFIG_FP, DVNConf
@@ -9,7 +10,7 @@ class CliDvnCleanUp(BaseCliCommand):
     """Command."""
 
     names = ["dv-cleanup"]
-    description = "Clean up local Dataverse operation logs."
+    description = "Clean up local Dataverse logs."
 
     @staticmethod
     def run_shell(session, parser, args):

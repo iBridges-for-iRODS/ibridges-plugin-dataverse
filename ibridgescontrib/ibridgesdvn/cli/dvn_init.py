@@ -8,16 +8,12 @@ from ibridges.cli.base import BaseCliCommand
 
 from ibridgescontrib.ibridgesdvn.dvn_config import DVN_CONFIG_FP, DVNConf, show_available
 
-# ----------------------------------------------------------------------
-# dv-init
-# ----------------------------------------------------------------------
-
 
 class CliDvnInit(BaseCliCommand):
     """Initialize Dataverse configuration by providing a token."""
 
     names = ["dv-init"]
-    description = "Provide token and store for future use"
+    description = "Store a Dataverse API token."
     examples = ["", "some_url", "some_alias"]
 
     @classmethod
@@ -68,10 +64,6 @@ class CliDvnInit(BaseCliCommand):
 
         show_available(dvn_conf)
 
-
-# ----------------------------------------------------------------------
-# dv-switch
-# ----------------------------------------------------------------------
 
 
 class CliDvnSwitch(BaseCliCommand):
