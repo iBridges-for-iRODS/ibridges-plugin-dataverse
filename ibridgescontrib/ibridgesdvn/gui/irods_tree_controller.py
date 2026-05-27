@@ -1,15 +1,16 @@
-# irods_tree_controller.py
-
+"""Build tree."""
 from pathlib import PurePath
-from PySide6.QtCore import QModelIndex
+
 from ibridges import IrodsPath
 from ibridgesgui.irods_tree_model import IrodsTreeModel
+from PySide6.QtCore import QModelIndex
 
 
 class IrodsTreeController:
     """Encapsulates all logic for initializing and expanding the iRODS tree."""
 
     def __init__(self, session, tree_view):
+        """Init."""
         self.session = session
         self.tree_view = tree_view
         self.model = None

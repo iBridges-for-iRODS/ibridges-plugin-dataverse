@@ -203,9 +203,7 @@ def show_available(dvn_conf) -> None:
     url_w = max(len(r[2]) for r in rows)
 
     # Header
-    print(
-        f"{' '.ljust(1)} " f"{'Alias'.ljust(alias_w)}   " f"{'URL'.ljust(url_w)}   " f"URL   Token"
-    )
+    print(f"{' '.ljust(1)} {'Alias'.ljust(alias_w)}   {'URL'.ljust(url_w)}   URL   Token")
     print("-" * (alias_w + url_w + 25))
 
     # Rows

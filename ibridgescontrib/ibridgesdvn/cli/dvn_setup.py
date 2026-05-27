@@ -43,7 +43,6 @@ class CliDvnAlias(BaseCliCommand):
         """Command."""
         raise NotImplementedError("dv-setup is not available in the iBridges shell.")
 
-
     @classmethod
     def run_command(cls, args):
         """Create, delete, or list Dataverse aliases."""

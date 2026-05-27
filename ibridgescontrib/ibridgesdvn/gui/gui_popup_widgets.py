@@ -108,7 +108,6 @@ class CreateDataset(PySide6.QtWidgets.QDialog, ui_create_dataset):
         except (ApiAuthorizationError, KeyError, Exception) as err:
             self._set_error(f"ERROR: Could not create Dataset. {repr(err)}")
 
-
     # ------------------------------------------------------------------
     # Metadata file selection
     # ------------------------------------------------------------------
