@@ -1,102 +1,105 @@
-# iBridges Dataverse
-[![Python package](https://github.com/iBridges-for-iRODS/ibridges-plugin-dataverse/actions/workflows/python_package.yml/badge.svg?branch=main)](https://github.com/iBridges-for-iRODS/ibridges-plugin-dataverse/actions/workflows/python_package.yml)
+# iBridges Dataverse  
+[`https://github.com/iBridges-for-iRODS/ibridges-plugin-dataverse/actions/workflows/python_package.yml`](https://github.com/iBridges-for-iRODS/ibridges-plugin-dataverse/actions/workflows/python_package.yml)
 
-This package provides a plugin to the iBridges CLI and GUI. The plugin allows to create a dataset on Dataverse and to uplaod iRODS data objects.
+This package provides a Dataverse plugin for the iBridges CLI and GUI.  
+It allows you to create Dataverse datasets and upload iRODS data objects.
 
 ## Dependencies
 
-- Python 3.9 or higher
-- HTTPX
-- PyDataverse
-- iBridges and iBridges GUI (ibridges, ibridgesgui)
+- Python 3.9+
+- HTTPX  
+- PyDataverse  
+- iBridges and iBridges GUI (`ibridges`, `ibridgesgui`)
 
-All packages are installable with pip. 
+All dependencies are installable via `pip`.
 
-## 💡 Highlights
+## Highlights
 
-- Checksum checks upon upload to Dataverse
-- Mark files for upload as you browse and push to Dataverse later --> Git-like workflow
-- GUI and CLI receive the same information, so you can switch between them without loosing information
+- Automatic checksum verification during upload  
+- Git‑like workflow: stage files first, upload later  
+- Shared state between CLI and GUI — switch freely without losing progress  
 
-## :warning: NOTE
+## :warning: Important Notes
 
-- The plugin only transfers files which are smaller than 9GB!
-- All data from iRODS will be downloaded to your local computer.
+- Only files **smaller than 9 GB** are transferred.  
+- All iRODS data is **downloaded locally** before being uploaded to Dataverse.
 
-  The files will be downloaded one by one to a temporary folder. From there they are uploaded to Dataverse and are finally deleted from your computer. So you need at least 9GB of extra space. In case of errors in the upload to Dataverse, the file will **not** be deleted from them temporary folder so that files might accumulate on your computer.
- 
-## Install the plugin
+  Files are downloaded one by one into a temporary directory, uploaded to Dataverse, and then deleted.  
+  You therefore need at least **9 GB of free disk space**.  
+  If an upload fails, the temporary file is **not** deleted, so files may accumulate.
 
-Install the package from pypi:
+## Installation
+
+### Install from PyPI
 
 ```
 pip install ibridgesdvn
 ```
 
-Install the CLI from the git repository:
+### Install the CLI from GitHub
 
 ```
 pip install git+https://github.com/iBridges-for-iRODS/ibridges-plugin-dataverse.git
 ```
 
-Install the GUI and CLI:
+### Install both GUI and CLI
 
 ```
 pip install git+https://github.com/iBridges-for-iRODS/ibridges-plugin-dataverse.git
 pip install "ibridgesdvn[gui]"
 ```
 
-This installs the python package `ibridgesdvn`.
+This installs the Python package `ibridgesdvn`.
 
+## CLI Commands
 
-
-When you start the iBridges CLI or shell you will see the following new commands:
+Starting the iBridges CLI (`ibridges -h`) shows the additional Dataverse commands:
 
 ```
-ibridges -h
-
-    dv-add-file         Mark one or more iRODS data objects to be uploaded to a Dataverse dataset.
-    dv-setup            Print existing Dataverse configurations or create new ones.
-    dv-cleanup          Cleanup all entries from the status, where the list of irods files is empty.
-    dv-create-ds        Create a new dataset in a Dataverse collection.
-    dv-init             Provide token and store for future use
-    dv-push             Push all local changes to the dataverse collection.
-    dv-rm-file          Remove one or more iRODS data objects from upload to a Dataverse dataset.
-    dv-status           List all local changes to the dataset(s).
-    dv-switch           Switch to another existing Dataverse configuration by providing a url or alias.
+ibridgesdvn commands:
+    dv-add-file        Stage iRODS files for upload.
+    dv-cleanup         Clean up local Dataverse logs.
+    dv-create-ds       Create a new Dataverse dataset.
+    dv-draft           Show or delete draft datasets.
+    dv-init            Store a Dataverse API token.
+    dv-push            Upload staged files.
+    dv-rm-file         Remove staged files.
+    dv-setup           Manage Dataverse configurations.
+    dv-status          Show pending uploads and drafts.
+    dv-switch          Switch Dataverse configuration.
 ```
 
-If you use the iBridges GUI you will be able to select a "Dataverse" view.
+If you use the iBridges GUI, a **Dataverse** view becomes available.
 
 ## The Dataverse View
 
 ![](docs/gui_view.png)
 
-- Step 1: Configure your Dataverse Connection
-	You can add new configurations or delete old ones.
-- Step 2: Select a Dataverse collection to which files should be uploaded.
-	If you do not have a dataset yet, use the
-	"Create New Dataset" button and get a DOI to a newly created dataset.
-- Step 3: Select iRODS data objects from the right pane of the view.
-	With the button "<<" they will be added to the list of data that will be uploaded.
-	You can also delete one or several entries from the list.
+1. **Configure your Dataverse connection**  
+   Add or remove Dataverse configurations.
 
-When you are happy with the list, click "Upload to Dataverse". Now go to your Dataverse dataset in the browser and finish you data publication.
+2. **Select a Dataverse collection**  
+   If you don’t have a dataset yet, click **Create New Dataset** to generate one and obtain its DOI.
 
+3. **Select iRODS data objects**  
+   Use the right-hand browser to select files.  
+   Click **<<** to stage them for upload.  
+   You may remove entries at any time.
 
+When ready, click **Upload to Dataverse**.  
+After upload, open the dataset in your browser to finalize publication.
 
+## Dataverse Commands
 
-## The Dataverse commands
+### Configuring a Dataverse Instance
 
-### Configuring a Dataverse instance
-
-With the command `ibridges dv-setup` you can see all existing Dataverse URLs and you can create an alias for a Dataverse URL.
+List or create Dataverse configurations:
 
 ```
 ibridges dv-setup dvnl-demo https://demo.dataverse.nl
 ```
 
-To activate this environment you need to provide an API token:
+Activate a configuration and store an API token:
 
 ```
 ibridges dv-init dvnl-demo
@@ -105,9 +108,7 @@ Your Dataverse token for dvnl-demo :
 * dvnl-demo -> https://demo.dataverse.nl
 ```
 
-Your token will not be shown, but stored for future use.
-
-You see that there are two Dataverse URLs. You can switch between them with:
+Switch between configurations:
 
 ```
 ibridges dv-switch https://demo.dataverse.org
@@ -115,100 +116,85 @@ ibridges dv-switch https://demo.dataverse.org
   dvnl-demo -> https://demo.dataverse.nl
 ```
 
-**In all of those commands you can use the URLs and the aliases interchangeably.**
+You may use **URLs or aliases interchangeably**.
 
-**Note, that those commands are only available for the CLI and not for the shell. All other commands can be used from the shell.**
+> Note: These setup commands are available only in the CLI, not in the shell.  
+> All other commands work in both.
 
-### Creating a dataset
 
-To create a dataset, you will need a specific Dataverse dataset.json which you can provide like this:
+### Creating a Dataset
+
+You can create a dataset using a Dataverse `dataset.json`:
 
 ```
 ibridges shell
 ibshell:research-christine> dv-create-ds UUscience --metajson ibridgescontrib/ibridgesdvn/dataset.json
 Dataset with pid 'doi:10.80227/PDVNL/RZQRAK' created.
 ```
-This creates a dataset on the Dataverse we selected with `dv-init` or `dv-switch`, it uses the Dataverse collection `UUscience`. Please adjust to your Dataverse instance. 
-You will need the `10.80227/PDVNL/RZQRAK` part of the pid to add files and to finally upload them to Dataverse, so please save it somewhere.
 
-Alternatively, you can create some minimal metadata with the command:
+Save the dataset identifier (e.g., `10.80227/PDVNL/RZQRAK`) — you will need it for staging and uploading files.
+
+Alternatively, create minimal metadata interactively:
 
 ```
-ibshell:research-christine> dv-create-ds UUscience --metadata
+ibshell:research-christine> dv-create-ds UUscience
 ```
-This will open a small interactive questionnaire for the most basic metadata that Dtaaverse needs to create a Dataset.
 
-### Browsing files and adding it to Dataverse
+This opens a short questionnaire for the required fields.
 
-After you created the new Dataset on Dataverse, you can now use the iBridges shell to browse and add files as you go along.
+### Browsing Files and Staging Them
 
-We implemented a git-like workflow. So the following command will only mark files to be uploaded to a specific Dataset on Dataverse.
-
-
-Browse through collections in iRODS
+Browse iRODS collections:
 
 ```
 ibshell:research-christine> ls my_books
-/uu/home/research-christine/my_books:
-  /uu/home/research-christine/my_books/AdventuresSherlockHolmes.txt
-  /uu/home/research-christine/my_books/AliceAdventuresInWonderLand.txt
-  /uu/home/research-christine/my_books/DonQuixote.txt
-  /uu/home/research-christine/my_books/Dracula.txt
 ```
 
-And select files as you go along:
+Stage files for upload:
 
 ```
 ibshell:research-christine> dv-add-file 10.80227/PDVNL/RZQRAK irods:my_books/AdventuresSherlockHolmes.txt irods:my_books/DonQuixote.txt
 ```
 
-In the iBridges CLI and shell you can use relative iRODS paths. All iRODS paths need to be prefixed with `irods:`.
+All iRODS paths must be prefixed with `irods:`.  
+Relative paths are supported.
 
-You will receive a short summary of all files that you ever marked for upload. This summary also contains all Datavers instances you work on and all Datasets:
+View the staging summary:
 
 ```
-{'https://demo.dataverse.nl': {'add_file': [{'dataset': '10.80227/PDVNL/RZQRAK',
-                                             'irods_paths': ['/uu/home/research-christine/my_books/AdventuresSherlockHolmes.txt',
-                                                             '/uu/home/research-christine/my_books/DonQuixote.txt']}]}}
+{'https://demo.dataverse.nl': {'add_file': [...]}}
+```
 
-``` 
-
-You can also remove iRODS paths again with:
+Remove staged files:
 
 ```
 ibshell:research-christine> dv-rm-file 10.80227/PDVNL/RZQRAK irods:my_books/DonQuixote.txt
 ```
 
-And with `dv-status` you can check which files are marked for upload:
+Check status:
 
 ```
 ibshell:research-christine> dv-status
-{'https://demo.dataverse.nl': {'add_file': [{'dataset': '10.80227/PDVNL/RZQRAK',
-                                             'irods_paths': ['/uu/home/research-christine/my_books/AdventuresSherlockHolmes.txt']}]}}
 ```
 
-### Upload data to dataset
+Check opened drafts:
 
-Now that you are happy with the marked data, upload them to the dataset:
+```
+ibshell:research-christine> dv-draft
+```
+
+### Uploading Data
+
+Upload staged files:
 
 ```
 ibshell:research-christine> dv-push 10.80227/PDVNL/RZQRAK
-
-Data stored in /Users/staig001/.dvn/data
-/uu/home/research-christine/my_books/AdventuresSherlockHolmes.txt
-100%|████████████████████████████████████████████████████████████████| 580k/580k [00:00<00:00, 1.01MB/s]
-Downloaded /uu/home/research-christine/my_books/AdventuresSherlockHolmes.txt --> /Users/staig001/.dvn/data/AdventuresSherlockHolmes.txt
-{'pid': 'doi:dataset_id', 'filename': 'AdventuresSherlockHolmes.txt'}
-Uploaded /Users/staig001/.dvn/data/AdventuresSherlockHolmes.txt --> 10.80227/PDVNL/RZQRAK
 ```
 
-A successful download and upload will trigger that those files will be removed from the status.
+Files are downloaded to a temporary directory, uploaded to Dataverse, and removed locally if successful.
+
+After upload, the status becomes empty:
 
 ```
 ibshell:research-christine> dv-status
-{'https://demo.dataverse.nl': {'add_file': [{'dataset': '10.80227/PDVNL/RZQRAK',
-                                             'irods_paths': []}]}}
 ```
-
-
-

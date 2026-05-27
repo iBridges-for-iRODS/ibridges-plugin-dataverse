@@ -1,39 +1,31 @@
 # -*- coding: utf-8 -*-
-# pylint: skip-file
-# ruff: noqa: N999, E501, N801, D101, N802, D102, N803, N802, D102, N803
+
 ################################################################################
 ## Form generated from reading UI file 'tabDataverse.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.8.2
+## Created by: Qt User Interface Compiler version 6.11.1
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
 
-from PySide6.QtCore import QCoreApplication, QMetaObject, QSize
-from PySide6.QtGui import QFont
-from PySide6.QtWidgets import (
-    QAbstractItemView,
-    QCheckBox,
-    QComboBox,
-    QHBoxLayout,
-    QLabel,
-    QLineEdit,
-    QProgressBar,
-    QPushButton,
-    QSizePolicy,
-    QSpacerItem,
-    QTableWidget,
-    QTableWidgetItem,
-    QTreeView,
-    QVBoxLayout,
-)
-
+from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
+    QMetaObject, QObject, QPoint, QRect,
+    QSize, QTime, QUrl, Qt)
+from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
+    QFont, QFontDatabase, QGradient, QIcon,
+    QImage, QKeySequence, QLinearGradient, QPainter,
+    QPalette, QPixmap, QRadialGradient, QTransform)
+from PySide6.QtWidgets import (QAbstractItemView, QApplication, QCheckBox, QComboBox,
+    QHBoxLayout, QHeaderView, QLabel, QLineEdit,
+    QProgressBar, QPushButton, QSizePolicy, QSpacerItem,
+    QTableWidget, QTableWidgetItem, QTreeView, QVBoxLayout,
+    QWidget)
 
 class Ui_Form(object):
     def setupUi(self, Form):
         if not Form.objectName():
             Form.setObjectName(u"Form")
-        Form.resize(886, 464)
+        Form.resize(886, 500)
         Form.setStyleSheet(u"QWidget\n"
 "{\n"
 "    background-color: rgb(211,211,211);\n"
@@ -54,7 +46,7 @@ class Ui_Form(object):
 "    color: rgb(220, 130, 30);\n"
 "}\n"
 "\n"
-"QLineEdit, QTextEdit, QTableWidget\n"
+"QLineEdit, QTextEdit, QTableWidget, QComboBox\n"
 "{\n"
 "   background-color:  rgb(245, 244, 244)\n"
 "}\n"
@@ -76,8 +68,8 @@ class Ui_Form(object):
 "}\n"
 "\n"
 "")
-        self.horizontalLayout = QHBoxLayout(Form)
-        self.horizontalLayout.setObjectName(u"horizontalLayout")
+        self.horizontalLayout_5 = QHBoxLayout(Form)
+        self.horizontalLayout_5.setObjectName(u"horizontalLayout_5")
         self.verticalLayout_3 = QVBoxLayout()
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
         self.dv_url_label = QLabel(Form)
@@ -119,20 +111,56 @@ class Ui_Form(object):
 
         self.verticalLayout_3.addLayout(self.verticalLayout_2)
 
-        self.horizontalLayout_7 = QHBoxLayout()
-        self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
+        self.verticalLayout = QVBoxLayout()
+        self.verticalLayout.setObjectName(u"verticalLayout")
+        self.horizontalLayout = QHBoxLayout()
+        self.horizontalLayout.setObjectName(u"horizontalLayout")
+        self.label = QLabel(Form)
+        self.label.setObjectName(u"label")
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.label.sizePolicy().hasHeightForWidth())
+        self.label.setSizePolicy(sizePolicy)
+        self.label.setMinimumSize(QSize(50, 0))
+
+        self.horizontalLayout.addWidget(self.label)
+
+        self.draft_box = QComboBox(Form)
+        self.draft_box.setObjectName(u"draft_box")
+        sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        sizePolicy1.setHorizontalStretch(0)
+        sizePolicy1.setVerticalStretch(0)
+        sizePolicy1.setHeightForWidth(self.draft_box.sizePolicy().hasHeightForWidth())
+        self.draft_box.setSizePolicy(sizePolicy1)
+        self.draft_box.setMinimumSize(QSize(0, 0))
+
+        self.horizontalLayout.addWidget(self.draft_box)
+
+
+        self.verticalLayout.addLayout(self.horizontalLayout)
+
+        self.horizontalLayout_4 = QHBoxLayout()
+        self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
         self.label_3 = QLabel(Form)
         self.label_3.setObjectName(u"label_3")
+        sizePolicy.setHeightForWidth(self.label_3.sizePolicy().hasHeightForWidth())
+        self.label_3.setSizePolicy(sizePolicy)
+        self.label_3.setMinimumSize(QSize(20, 0))
 
-        self.horizontalLayout_7.addWidget(self.label_3)
+        self.horizontalLayout_4.addWidget(self.label_3)
 
         self.dv_ds_edit = QLineEdit(Form)
         self.dv_ds_edit.setObjectName(u"dv_ds_edit")
+        self.dv_ds_edit.setMinimumSize(QSize(0, 0))
 
-        self.horizontalLayout_7.addWidget(self.dv_ds_edit)
+        self.horizontalLayout_4.addWidget(self.dv_ds_edit)
 
 
-        self.verticalLayout_3.addLayout(self.horizontalLayout_7)
+        self.verticalLayout.addLayout(self.horizontalLayout_4)
+
+
+        self.verticalLayout_3.addLayout(self.verticalLayout)
 
         self.horizontalLayout_2 = QHBoxLayout()
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
@@ -166,11 +194,11 @@ class Ui_Form(object):
         __qtablewidgetitem1 = QTableWidgetItem()
         self.selected_data_table.setHorizontalHeaderItem(1, __qtablewidgetitem1)
         self.selected_data_table.setObjectName(u"selected_data_table")
-        sizePolicy = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.selected_data_table.sizePolicy().hasHeightForWidth())
-        self.selected_data_table.setSizePolicy(sizePolicy)
+        sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+        sizePolicy2.setHorizontalStretch(0)
+        sizePolicy2.setVerticalStretch(0)
+        sizePolicy2.setHeightForWidth(self.selected_data_table.sizePolicy().hasHeightForWidth())
+        self.selected_data_table.setSizePolicy(sizePolicy2)
         self.selected_data_table.setMinimumSize(QSize(0, 0))
         self.selected_data_table.setSelectionMode(QAbstractItemView.MultiSelection)
         self.selected_data_table.setSelectionBehavior(QAbstractItemView.SelectRows)
@@ -208,7 +236,7 @@ class Ui_Form(object):
         self.verticalLayout_3.addWidget(self.progress_bar)
 
 
-        self.horizontalLayout.addLayout(self.verticalLayout_3)
+        self.horizontalLayout_5.addLayout(self.verticalLayout_3)
 
         self.add_selected_button = QPushButton(Form)
         self.add_selected_button.setObjectName(u"add_selected_button")
@@ -220,7 +248,7 @@ class Ui_Form(object):
         self.add_selected_button.setFont(font)
         self.add_selected_button.setIconSize(QSize(50, 50))
 
-        self.horizontalLayout.addWidget(self.add_selected_button)
+        self.horizontalLayout_5.addWidget(self.add_selected_button)
 
         self.verticalLayout_5 = QVBoxLayout()
         self.verticalLayout_5.setObjectName(u"verticalLayout_5")
@@ -237,7 +265,7 @@ class Ui_Form(object):
         self.verticalLayout_5.addWidget(self.error_label)
 
 
-        self.horizontalLayout.addLayout(self.verticalLayout_5)
+        self.horizontalLayout_5.addLayout(self.verticalLayout_5)
 
 
         self.retranslateUi(Form)
@@ -256,7 +284,8 @@ class Ui_Form(object):
         self.add_url_button.setToolTip(QCoreApplication.translate("Form", u"\"Create a new Dataverse configuration.\"", None))
 #endif // QT_CONFIG(tooltip)
         self.add_url_button.setText(QCoreApplication.translate("Form", u"Add URL", None))
-        self.label_3.setText(QCoreApplication.translate("Form", u"Dataset", None))
+        self.label.setText(QCoreApplication.translate("Form", u"Drafts", None))
+        self.label_3.setText(QCoreApplication.translate("Form", u"Dataset ID", None))
 #if QT_CONFIG(tooltip)
         self.dv_ds_edit.setToolTip(QCoreApplication.translate("Form", u"Fill in a Dataset DOI without \"doi:\".", None))
 #endif // QT_CONFIG(tooltip)

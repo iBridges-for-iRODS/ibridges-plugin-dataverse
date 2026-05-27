@@ -229,7 +229,7 @@ class DvnOperations:
         """Track newly created datasets so the workflow can auto-push them later."""
         dv_ops = self._ensure_dv_entry(dv_url)
         if dataset_id not in dv_ops["created_datasets"]:
-            dv_ops["created_datasets"].append(dataset_id)
+            dv_ops["created_datasets"].append(dataset_id.replace("doi:", ""))
         self._commit()
 
     def get_created_datasets(self, dv_url: str) -> list[str]:
@@ -349,6 +349,9 @@ class DvnOperations:
 
         if not api.dataset_exists(dataset_id):
             raise ValueError(f"Dataset {dataset_id} does not exist.")
+        state = api.get_dataset_state(dataset_id)
+        if not state.lower() == "draft":
+            raise ValueError(f"Dataset {dataset_id} not in DRAFT state --> {state}")
 
         # make copy of paths to loop over and adjust  during loop
         paths = list(self.get_paths(dv_url, dataset_id))

@@ -66,6 +66,7 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
         self.add_url_button.clicked.connect(self.add_dv_url)
         self.delete_url_button.clicked.connect(self.delete_dv_url)
 
+        self.draft_box.currentIndexChanged.connect(self._on_draft_selected)
         self.dv_ds_edit.textChanged.connect(self.dataset_edit_action)
         self.dv_create_ds_button.clicked.connect(self.dv_create_ds)
 
@@ -76,6 +77,7 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
 
         self._init_irods_tree()
         self._connect_to_dataverse()
+        self.load_drafts_into_box()
 
     def load_dataverse_conf(self):
         """Load Dataverse configurations with validation (same logic as CLI)."""
@@ -173,9 +175,65 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
             self.logger.info("DATAVERSE: %s", exc)
         self.load_dataverse_conf()
 
-    # ------------------------------------------------------------------
-    # DATASET CREATION
-    # ------------------------------------------------------------------
+    def load_drafts_into_box(self):
+        """Import draft ids into combo box."""
+        self.draft_box.clear()
+        if not self.dvn_api:
+            return
+
+        drafts = self.dvn_ops.get_created_datasets(self.url)
+
+        for ds in drafts:
+            try:
+                state = self.dvn_api.get_dataset_state(ds)
+            except Exception:
+                state = "UNKNOWN"
+
+            # Display text, store dataset ID as userData
+            display = f"{ds} [{state}]"
+            self.draft_box.addItem(display, userData=ds)
+
+
+    def _on_draft_selected(self, index):
+        if index < 0:
+            return
+
+        ds_id = self.draft_box.itemData(index)
+        if not ds_id:
+            return
+
+        # Pass the dataset ID to dv_ds_edit
+        self.dv_ds_edit.setText(ds_id)
+        #self.dataset_edit_action()
+
+    def _sync_draft_box(self, dataset_id):
+        """Ensure draft_box reflects the currently loaded dataset ID."""
+        # First check if dataset_id is already in the combobox
+        found_index = -1
+        for i in range(self.draft_box.count()):
+            if self.draft_box.itemData(i) == dataset_id:
+                found_index = i
+                break
+
+        if found_index >= 0:
+            # Dataset already exists → switch to it
+            self.draft_box.setCurrentIndex(found_index)
+            return
+
+        # Otherwise create a new entry
+        # Try to fetch state (optional but nice)
+        try:
+            state = self.dvn_api.get_dataset_state(dataset_id)
+            self.dvn_ops.register_created_dataset(self.dvn_api.url, dataset_id)
+        except Exception:
+            state = "UNKNOWN"
+
+        display = f"{dataset_id} [{state}]"
+        self.draft_box.addItem(display, userData=dataset_id)
+
+        # Switch to the newly added entry
+        self.draft_box.setCurrentIndex(self.draft_box.count() - 1)
+
 
     def dv_create_ds(self):
         """Create a new dataset."""
@@ -188,6 +246,7 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
         widget = CreateDataset(self.dvn_api, self.dv_ds_edit)
         widget.exec()
 
+        self.load_drafts_into_box()
         doi = self.dv_ds_edit.text().strip()
         if doi:
             self.logger.info("DATAVERSE: Created Dataset %s", doi)
@@ -230,6 +289,10 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
             return
         if not dataset_id or not self.dvn_api.dataset_exists(dataset_id):
             self.error_label.setText("Enter a valid Dataset Identifier.")
+            return
+        state = self.dvn_api.get_dataset_state(dataset_id)
+        if not state.lower() == "draft":
+            self.error_label.setText(f"Dataset {dataset_id} not in DRAFT state --> {state}")
             return
 
         if self.selected_data_table.rowCount() == 0:
@@ -391,6 +454,8 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
         if not self.dvn_api.dataset_exists(dataset_id):
             self.error_label.setText("Dataset does not exist (any longer).")
             return
+
+        self._sync_draft_box(dataset_id)
 
         paths = self.dvn_ops.get_paths(self.url, dataset_id)
         if not paths:
