@@ -2,7 +2,7 @@
 
 import logging
 import shutil
-from pathlib import Path
+from pathlib import Path, PurePath
 
 import httpx
 import PySide6.QtCore
@@ -18,6 +18,7 @@ from ibridgescontrib.ibridgesdvn.dvn_operations import DVN_OPS_PATH, TEMP_DIR, D
 from ibridgescontrib.ibridgesdvn.gui.gui_popup_widgets import CreateDataset, CreateDvnURL
 from ibridgescontrib.ibridgesdvn.gui.gui_thread import TransferDataThread
 from ibridgescontrib.ibridgesdvn.gui.uiDataverse import Ui_Form
+from ibridgescontrib.ibridgesdvn.gui.irods_tree_controller import IrodsTreeController
 from ibridgescontrib.ibridgesdvn.utils import ensure_connection
 
 
@@ -133,6 +134,7 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
     def _connect_to_dataverse(self):
         """Connect GUI to Dataverse using the stored URL (not the label)."""
         self.error_label.clear()
+        self.dvn_api = None
 
         self.url = self.dv_url_select_box.currentData()
 
@@ -145,6 +147,8 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
 
         if error:
             self.error_label.setText(f"Invalid Dataverse connection: {error}")
+            self.dv_ds_edit.clear()
+            self.draft_box.clear()
             return
 
         # store last used params
@@ -153,6 +157,7 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
 
         # clear possible clutter in ds field
         self.dv_ds_edit.clear()
+        self.load_drafts_into_box()
 
     def add_dv_url(self):
         """Add new dvn configuration."""
@@ -406,27 +411,12 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
         self.irods_tree_view.clearSelection()
         self.setCursor(PySide6.QtGui.QCursor(PySide6.QtCore.Qt.CursorShape.ArrowCursor))
 
-    # ------------------------------------------------------------------
-    # IRODS TREE
-    # ------------------------------------------------------------------
-
-    def _irods_root(self):
-        lowest = IrodsPath(self.session).absolute()
-        while lowest.parent.exists() and str(lowest) != "/":
-            lowest = lowest.parent
-        return lowest
 
     def _init_irods_tree(self):
-        root = self._irods_root()
-        self.irods_model = IrodsTreeModel(self.irods_tree_view, root)
-        self.irods_tree_view.setModel(self.irods_model)
-        self.irods_tree_view.expanded.connect(self.irods_model.refresh_subtree)
-        self.irods_model.init_tree()
-        self.irods_tree_view.expand(self.irods_model.index(0, 0))
+        self.irods_tree = IrodsTreeController(self.session, self.irods_tree_view)
+        self.irods_tree.init_tree()
+        self.irods_model = self.irods_tree.model
 
-        # hide unnecessary columns
-        for col in range(1, 6):
-            self.irods_tree_view.setColumnHidden(col, True)
 
     # ------------------------------------------------------------------
     # DATASET TABLE
@@ -443,13 +433,13 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
         self.selected_data_table.setRowCount(0)
 
         dataset_id = self.dv_ds_edit.text().strip()
-        if not dataset_id:
-            self.error_label.setText("Enter a valid Dataset Identifier.")
-            return
         if not self.dvn_api:
             self.error_label.setText(
                 "Not connected to Dataverse. Check Dataverse URL and Configuration."
             )
+            return
+        if not dataset_id:
+            self.error_label.setText("Enter a valid Dataset Identifier.")
             return
         if not self.dvn_api.dataset_exists(dataset_id):
             self.error_label.setText("Dataset does not exist (any longer).")
