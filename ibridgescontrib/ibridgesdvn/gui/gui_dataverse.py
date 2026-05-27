@@ -291,6 +291,10 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
         if not dataset_id or not self.dvn_api.dataset_exists(dataset_id):
             self.error_label.setText("Enter a valid Dataset Identifier.")
             return
+        state = self.dvn_api.get_dataset_state(dataset_id)
+        if not state.lower() == "draft":
+            self.error_label.setText(f"Dataset {dataset_id} not in DRAFT state --> {state}")
+            return
 
         if self.selected_data_table.rowCount() == 0:
             self.error_label.setText("Please add some data from the iRODS tree.")

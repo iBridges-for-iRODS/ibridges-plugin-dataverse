@@ -349,6 +349,9 @@ class DvnOperations:
 
         if not api.dataset_exists(dataset_id):
             raise ValueError(f"Dataset {dataset_id} does not exist.")
+        state = api.get_dataset_state(dataset_id)
+        if not state.lower() == "draft":
+            raise ValueError(f"Dataset {dataset_id} not in DRAFT state --> {state}")
 
         # make copy of paths to loop over and adjust  during loop
         paths = list(self.get_paths(dv_url, dataset_id))
