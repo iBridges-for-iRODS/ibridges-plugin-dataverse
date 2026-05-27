@@ -1,5 +1,5 @@
 # iBridges Dataverse  
-[`https://github.com/iBridges-for-iRODS/ibridges-plugin-dataverse/actions/workflows/python_package.yml`](https://github.com/iBridges-for-iRODS/ibridges-plugin-dataverse/actions/workflows/python_package.yml)
+[![Python package](https://github.com/iBridges-for-iRODS/ibridges-plugin-dataverse/actions/workflows/python_package.yml/badge.svg?branch=main)](https://github.com/iBridges-for-iRODS/ibridges-plugin-dataverse/actions/workflows/python_package.yml)
 
 This package provides a Dataverse plugin for the iBridges CLI and GUI.  
 It allows you to create Dataverse datasets and upload iRODS data objects.
