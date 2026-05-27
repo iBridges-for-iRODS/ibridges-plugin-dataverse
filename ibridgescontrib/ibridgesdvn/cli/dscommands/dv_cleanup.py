@@ -10,7 +10,7 @@ class CliDvnCleanUp(BaseCliCommand):
     """Command."""
 
     names = ["dv-cleanup"]
-    description = "Clean up local Dataverse operation logs."
+    description = "Clean up local Dataverse logs."
 
     @staticmethod
     def run_shell(session, parser, args):
