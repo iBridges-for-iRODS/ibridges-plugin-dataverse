@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'tabDataverse.ui'
+## Form generated from reading UI file 'uiDataverse.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.11.1
 ##
@@ -25,7 +25,7 @@ class Ui_Form(object):
     def setupUi(self, Form):
         if not Form.objectName():
             Form.setObjectName(u"Form")
-        Form.resize(886, 500)
+        Form.resize(886, 508)
         Form.setStyleSheet(u"QWidget\n"
 "{\n"
 "    background-color: rgb(211,211,211);\n"
@@ -56,17 +56,6 @@ class Ui_Form(object):
 "	background-color: rgb(21, 165, 137);\n"
 "    color: rgb(245, 244, 244);\n"
 "}\n"
-"\n"
-"QPushButton#home_button, QPushButton#parent_button, QPushButton#refresh_button\n"
-"{\n"
-"    background-color: rgb(245, 244, 244);\n"
-"}\n"
-"\n"
-"QTabWidget#info_tabs\n"
-"{\n"
-"     background-color: background-color: rgb(211,211,211);\n"
-"}\n"
-"\n"
 "")
         self.horizontalLayout_5 = QHBoxLayout(Form)
         self.horizontalLayout_5.setObjectName(u"horizontalLayout_5")
@@ -212,6 +201,11 @@ class Ui_Form(object):
 
         self.horizontalLayout_3.addWidget(self.delete_selected_button)
 
+        self.refresh_button = QPushButton(Form)
+        self.refresh_button.setObjectName(u"refresh_button")
+
+        self.horizontalLayout_3.addWidget(self.refresh_button)
+
         self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         self.horizontalLayout_3.addItem(self.horizontalSpacer)
@@ -302,6 +296,7 @@ class Ui_Form(object):
         self.delete_selected_button.setToolTip(QCoreApplication.translate("Form", u"\"Remove file(s) from table.\"", None))
 #endif // QT_CONFIG(tooltip)
         self.delete_selected_button.setText(QCoreApplication.translate("Form", u"Delete", None))
+        self.refresh_button.setText(QCoreApplication.translate("Form", u"Refresh", None))
 #if QT_CONFIG(tooltip)
         self.dv_push_button.setToolTip(QCoreApplication.translate("Form", u"\"Upload to Dataverse dataset.\"", None))
 #endif // QT_CONFIG(tooltip)

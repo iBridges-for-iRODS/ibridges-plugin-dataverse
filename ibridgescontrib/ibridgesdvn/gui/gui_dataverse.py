@@ -77,9 +77,12 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
 
         # Load Dataverse configurations into dropdown
         self.dv_conn.load_configurations()
-        if self.dv_url_select_box.count() > 0:
-            self.dv_url_select_box.setCurrentIndex(0)
-
+        cur = self.dvn_conf.cur_dvn
+        if cur:
+            for i in range(self.dv_url_select_box.count()):
+                if self.dv_url_select_box.itemData(i) == cur:
+                    self.dv_url_select_box.setCurrentIndex(i)
+                    break
         # When user selects a different Dataverse URL
         self.dv_url_select_box.currentIndexChanged.connect(self._on_dataverse_changed)
 
@@ -96,6 +99,7 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
         self.dv_push_button.clicked.connect(self.dv_push)
         self.add_selected_button.clicked.connect(self.dv_add_file)
         self.add_selected_button.setEnabled(False)
+        self.refresh_button.clicked.connect(self.dataset_refresh_action)
 
         # iRODS tree
         self._init_irods_tree()
@@ -116,7 +120,6 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
             dvn_api_getter=lambda: self.dvn_api,
             url_getter=lambda: self.url,
             dvn_conf=self.dvn_conf,
-            dvn_ops=self.dvn_ops,
             temp_dir=self.temp_dir,
             get_dataset_id=lambda: self.dv_ds_edit.text().strip(),
             get_row_count=lambda: self.selected_data_table.rowCount(),
@@ -146,6 +149,11 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
     def dataset_edit_action(self):
         """Logic when new dataset id is entered in textfield."""
         self.add_selected_button.setEnabled(True)
+        self.dataset_table.dataset_edit_action()
+
+    def dataset_refresh_action(self):
+        """Refresh content of all drafts."""
+        self.dvn_ops.refresh()
         self.dataset_table.dataset_edit_action()
 
     def _on_dataverse_changed(self):
@@ -244,6 +252,14 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
     def dv_push(self):
         """Upload staged files to dataset."""
         self.error_label.clear()
+        # check if status of staged files is up to date
+        ops = self.dvn_ops.ops
+        self.dvn_ops.refresh()
+        if not ops == self.dvn_ops.ops:
+            self.error_label.setText(
+                    "Current state changed outside of this app. PLease refresh info.")
+            return
+
         self.push_manager.push()
 
     def _set_progress(self, value, maximum):

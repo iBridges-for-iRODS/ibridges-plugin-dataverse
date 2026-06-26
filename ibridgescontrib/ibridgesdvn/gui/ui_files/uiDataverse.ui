@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>886</width>
-    <height>500</height>
+    <height>508</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -44,17 +44,6 @@ QPushButton
 	background-color: rgb(21, 165, 137);
     color: rgb(245, 244, 244);
 }
-
-QPushButton#home_button, QPushButton#parent_button, QPushButton#refresh_button
-{
-    background-color: rgb(245, 244, 244);
-}
-
-QTabWidget#info_tabs
-{
-     background-color: background-color: rgb(211,211,211);
-}
-
 </string>
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout_5">
@@ -307,6 +296,13 @@ QTabWidget#info_tabs
          </property>
          <property name="text">
           <string>Delete</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="refresh_button">
+         <property name="text">
+          <string>Refresh</string>
          </property>
         </widget>
        </item>

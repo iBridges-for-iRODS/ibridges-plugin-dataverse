@@ -10,7 +10,6 @@ class PushWorkflowManager:
         dvn_api_getter,
         url_getter,
         dvn_conf,
-        dvn_ops,
         temp_dir,
         get_dataset_id,
         get_row_count,
@@ -27,7 +26,6 @@ class PushWorkflowManager:
         self.dvn_api_getter = dvn_api_getter
         self.url_getter = url_getter
         self.dvn_conf = dvn_conf
-        self.dvn_ops = dvn_ops
         self.temp_dir = temp_dir
 
         self.get_dataset_id = get_dataset_id
