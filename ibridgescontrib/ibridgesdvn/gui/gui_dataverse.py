@@ -77,9 +77,12 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
 
         # Load Dataverse configurations into dropdown
         self.dv_conn.load_configurations()
-        if self.dv_url_select_box.count() > 0:
-            self.dv_url_select_box.setCurrentIndex(0)
-
+        cur = self.dvn_conf.cur_dvn
+        if cur:
+            for i in range(self.dv_url_select_box.count()):
+                if self.dv_url_select_box.itemData(i) == cur:
+                    self.dv_url_select_box.setCurrentIndex(i)
+                    break
         # When user selects a different Dataverse URL
         self.dv_url_select_box.currentIndexChanged.connect(self._on_dataverse_changed)
 
