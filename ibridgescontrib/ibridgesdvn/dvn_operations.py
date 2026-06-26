@@ -124,6 +124,7 @@ class DvnOperations:
             self._save()
 
     def refresh(self):
+        """Reload dataset staging info from logs."""
         self.ops = self._read_ops_log()
 
     def clean_up_datasets(self, dv_url: str, parser=None) -> None:

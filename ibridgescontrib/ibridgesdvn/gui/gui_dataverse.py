@@ -256,7 +256,8 @@ class DataverseTab(PySide6.QtWidgets.QWidget, Ui_Form):
         ops = self.dvn_ops.ops
         self.dvn_ops.refresh()
         if not ops == self.dvn_ops.ops:
-            self.error_label.setText("Current state changed outside of this app. PLease refresh info.")
+            self.error_label.setText(
+                    "Current state changed outside of this app. PLease refresh info.")
             return
 
         self.push_manager.push()
