@@ -123,6 +123,9 @@ class DvnOperations:
         if changed:
             self._save()
 
+    def refresh(self):
+        self.ops = self._read_ops_log()
+
     def clean_up_datasets(self, dv_url: str, parser=None) -> None:
         """Manually trigger full cleanup including Dataverse checks."""
         api = self._get_api(dv_url, parser)

@@ -19,10 +19,12 @@ class DraftManager:
         """Update API + URL when Dataverse changes."""
         self.dvn_api = dvn_api
         self.url = url
+        self.dvn_ops.refresh()
 
     def load_drafts(self):
         """Load drafts into the combobox."""
         self.draft_box.clear()
+        self.dvn_ops.refresh()
 
         if not self.dvn_api or not self.url:
             return

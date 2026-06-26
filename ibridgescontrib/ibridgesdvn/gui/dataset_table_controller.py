@@ -57,6 +57,7 @@ class DatasetTableController:
         self.sync_draft_box(dataset_id)
 
         # --- Load staged paths ---
+        self.dvn_ops.refresh()
         paths = self.dvn_ops.get_paths(self.url, dataset_id)
         if not paths:
             return
