@@ -6,10 +6,10 @@ It allows you to create Dataverse datasets and upload iRODS data objects.
 
 ## Dependencies
 
-- Python 3.9+
+- Python 3.10+
 - HTTPX  
 - PyDataverse  
-- iBridges and iBridges GUI (`ibridges`, `ibridgesgui`)
+- iBridges and iBridges GUI (`ibridges`, `ibridgesgui`), version 2.1.0 or higher
 
 All dependencies are installable via `pip`.
 
